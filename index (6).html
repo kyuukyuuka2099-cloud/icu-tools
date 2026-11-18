@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>救急・ICU 臨床支援ツール v2.0</title>
+<style>:root{
+  --bg:#f4f6f9; --panel:#ffffff; --panel2:#f8fafc; --ink:#0f172a; --ink2:#475569; --ink3:#94a3b8;
+  --line:#e2e8f0; --line2:#cbd5e1; --brand:#0e7490; --brand2:#0891b2; --brand-soft:#e0f2fe;
+  --nav:#0b1f33; --nav2:#12304d; --nav-ink:#cbd5e1;
+  --ok:#15803d; --ok-bg:#dcfce7; --info:#1d4ed8; --info-bg:#dbeafe; --warn:#b45309; --warn-bg:#fef3c7; --danger:#b91c1c; --danger-bg:#fee2e2;
+  --r:12px; --sh:0 1px 2px rgba(15,23,42,.06),0 4px 16px rgba(15,23,42,.06);
+  --font:"BIZ UDPGothic","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+}
+[data-theme="dark"]{
+  --bg:#0b1220; --panel:#111a2b; --panel2:#0f1726; --ink:#e5e7eb; --ink2:#a5b4c8; --ink3:#64748b;
+  --line:#1f2b40; --line2:#2b3a55; --brand:#22b8cf; --brand2:#38c9de; --brand-soft:#0f2a3a;
+  --nav:#070d18; --nav2:#0f1a2c; --ok:#4ade80; --ok-bg:#0f2e1c; --info:#7aa2ff; --info-bg:#14234a; --warn:#fbbf24; --warn-bg:#33270b; --danger:#f87171; --danger-bg:#3a1414;
+  --sh:0 1px 2px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.num,input[type=number],.big{font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--brand)}
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.nav{background:var(--nav);color:var(--nav-ink);position:sticky;top:0;height:100vh;overflow:auto;display:flex;flex-direction:column}
+.brand{padding:20px 18px 14px;border-bottom:1px solid rgba(255,255,255,.07)}
+.brand b{display:block;color:#fff;font-size:16px;letter-spacing:.02em}
+.brand small{color:#7f93ab;font-size:11.5px}
+.nav ul{list-style:none;margin:8px 0;padding:0 10px}
+.nav li button{width:100%;display:flex;align-items:center;gap:11px;padding:10px 12px;border:0;background:none;border-radius:9px;color:var(--nav-ink);cursor:pointer;text-align:left;font-size:14px}
+.nav li button:hover{background:var(--nav2);color:#fff}
+.nav li button.on{background:linear-gradient(90deg,#0e7490,#0b5f77);color:#fff;box-shadow:inset 3px 0 0 #67e8f9}
+.nav svg{width:19px;height:19px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav .foot{margin-top:auto;padding:14px 18px;font-size:11.5px;color:#6b7f98;border-top:1px solid rgba(255,255,255,.07)}
+.nav .foot button{background:var(--nav2);border:1px solid rgba(255,255,255,.1);color:#cbd5e1;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:12px;margin-bottom:8px}
+main{min-width:0}
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 28px;display:flex;align-items:center;gap:14px}
+.topbar h1{font-size:19px;margin:0;font-weight:700}
+.topbar .sub{color:var(--ink2);font-size:13px}
+.topbar .sp{flex:1}
+.menu-btn{display:none}
+.page{display:none;padding:22px 28px 60px;max-width:1400px}
+.page.on{display:block;animation:fade .18s ease}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1}}
+.cols{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(330px,.9fr);gap:20px;align-items:start}
+.sticky{position:sticky;top:74px}
+/* ---------- cards ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);margin-bottom:18px}
+.card>header{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.card>header h2{font-size:15px;margin:0;font-weight:700}
+.card>header .tag{font-size:11.5px;color:var(--ink2);background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:1px 9px}
+.card>header .sp{flex:1}
+.card .bd{padding:16px 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px 14px}
+.grid.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.grid.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.fld label{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink2);margin-bottom:4px;font-weight:600}
+.fld .in{display:flex;align-items:stretch;border:1px solid var(--line2);border-radius:9px;background:var(--panel);overflow:hidden;transition:border-color .12s,box-shadow .12s}
+.fld .in:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
+.fld input,.fld select{border:0;outline:0;background:transparent;padding:8px 10px;width:100%;min-width:0;font-size:15px}
+.fld .u{display:flex;align-items:center;padding:0 9px;color:var(--ink3);font-size:12px;background:var(--panel2);border-left:1px solid var(--line);white-space:nowrap}
+.fld.bad .in{border-color:var(--danger);background:var(--danger-bg)}
+.fld .hint{font-size:11.5px;color:var(--ink3);margin-top:3px}
+select{appearance:auto}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--panel);border-radius:9px;padding:7px 13px;cursor:pointer;font-size:13.5px;font-weight:600}
+.btn:hover{border-color:var(--brand);color:var(--brand)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.pri:hover{background:var(--brand2);color:#fff}
+.btn.sm{padding:4px 10px;font-size:12.5px}
+.btn.ghost{border-color:transparent;background:transparent}
+.help{width:18px;height:18px;border-radius:50%;border:1px solid var(--line2);background:var(--panel2);color:var(--ink2);font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;line-height:1}
+.help:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+/* segmented */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line2);background:var(--panel);border-radius:9px;padding:6px 11px;cursor:pointer;font-size:13.5px;text-align:left;line-height:1.35;transition:border-color .1s}
+.seg button b{font-variant-numeric:tabular-nums;margin-right:6px;display:inline-block;min-width:1.1em;text-align:center}
+.seg button:hover{border-color:var(--brand)}
+.seg button.on{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 1px 4px color-mix(in srgb,var(--brand) 40%,transparent)}
+.seg.side button.on{background:#7c3aed;border-color:#7c3aed}
+.seg.col{flex-direction:column}
+.seg.col button{width:100%}
+.chk{display:flex;align-items:flex-start;gap:9px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;cursor:pointer;background:var(--panel);font-size:14px;line-height:1.45}
+.chk:hover{border-color:var(--brand)}
+.chk input{margin-top:3px;width:16px;height:16px;accent-color:var(--brand);flex:none}
+.chk.on{background:var(--brand-soft);border-color:var(--brand)}
+.chks{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+/* results */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel2);position:relative}
+.kpi .k{font-size:11.5px;color:var(--ink2);font-weight:600;display:flex;gap:4px;align-items:center}
+.kpi .v{font-size:23px;font-weight:700;letter-spacing:-.01em;font-variant-numeric:tabular-nums;line-height:1.25}
+.kpi .v small{font-size:12px;color:var(--ink3);font-weight:500;margin-left:3px}
+.kpi .n{font-size:11px;color:var(--ink3)}
+.kpi.ok{border-color:color-mix(in srgb,var(--ok) 40%,var(--line));background:var(--ok-bg)} .kpi.ok .v{color:var(--ok)}
+.kpi.warn{border-color:color-mix(in srgb,var(--warn) 45%,var(--line));background:var(--warn-bg)} .kpi.warn .v{color:var(--warn)}
+.kpi.danger{border-color:color-mix(in srgb,var(--danger) 45%,var(--line));background:var(--danger-bg)} .kpi.danger .v{color:var(--danger)}
+.kpi.info .v{color:var(--info)}
+.kpi.empty .v{color:var(--ink3)}
+.hero{border-radius:12px;padding:16px 18px;margin-bottom:14px;border:1px solid var(--line);background:var(--panel2)}
+.hero .lbl{font-size:12px;color:var(--ink2);font-weight:700;letter-spacing:.04em}
+.hero .val{font-size:30px;font-weight:800;line-height:1.2;margin:2px 0}
+.hero .desc{font-size:13.5px;color:var(--ink2)}
+.hero.ok{background:var(--ok-bg);border-color:color-mix(in srgb,var(--ok) 35%,transparent)} .hero.ok .val{color:var(--ok)}
+.hero.info{background:var(--info-bg);border-color:color-mix(in srgb,var(--info) 30%,transparent)} .hero.info .val{color:var(--info)}
+.hero.warn{background:var(--warn-bg);border-color:color-mix(in srgb,var(--warn) 35%,transparent)} .hero.warn .val{color:var(--warn)}
+.hero.danger{background:var(--danger-bg);border-color:color-mix(in srgb,var(--danger) 35%,transparent)} .hero.danger .val{color:var(--danger)}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.steps li{display:grid;grid-template-columns:92px 1fr;gap:10px;padding:9px 11px;border-radius:9px;border:1px solid var(--line);background:var(--panel);font-size:13.5px;line-height:1.5}
+.steps li .k{font-weight:700;font-size:12px;color:var(--ink2)}
+.steps li.ok{border-left:4px solid var(--ok)} .steps li.info{border-left:4px solid var(--info)} .steps li.warn{border-left:4px solid var(--warn);background:var(--warn-bg)} .steps li.danger{border-left:4px solid var(--danger);background:var(--danger-bg)}
+.alert{border-radius:10px;padding:10px 12px;font-size:13.5px;margin:8px 0;border:1px solid;display:flex;gap:9px;line-height:1.5}
+.alert::before{content:"!";flex:none;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;margin-top:1px}
+.alert.warn{background:var(--warn-bg);border-color:color-mix(in srgb,var(--warn) 35%,transparent)} .alert.warn::before{background:var(--warn)}
+.alert.danger{background:var(--danger-bg);border-color:color-mix(in srgb,var(--danger) 35%,transparent)} .alert.danger::before{background:var(--danger)}
+.alert.info{background:var(--info-bg);border-color:color-mix(in srgb,var(--info) 30%,transparent)} .alert.info::before{background:var(--info);content:"i"}
+.alert.ok{background:var(--ok-bg);border-color:color-mix(in srgb,var(--ok) 30%,transparent)} .alert.ok::before{background:var(--ok);content:"✓"}
+.muted{color:var(--ink2);font-size:13px}
+.tiny{font-size:11.5px;color:var(--ink3)}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--line2);background:var(--panel2)}
+.pill.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}.pill.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}.pill.danger{background:var(--danger-bg);color:var(--danger);border-color:transparent}.pill.info{background:var(--info-bg);color:var(--info);border-color:transparent}
+table.t{width:100%;border-collapse:collapse;font-size:13.5px}
+table.t th,table.t td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:center;font-variant-numeric:tabular-nums}
+table.t th{background:var(--panel2);font-size:12px;color:var(--ink2);font-weight:700}
+table.t td.hl,table.t th.hl{background:var(--brand-soft);color:var(--brand);font-weight:800}
+table.t td.hlx{background:var(--brand);color:#fff;font-weight:800;border-radius:4px}
+table.t tr td:first-child,table.t tr th:first-child{text-align:left}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:16px;flex-wrap:wrap}
+.tabs button{border:0;background:none;padding:9px 14px;cursor:pointer;font-weight:700;color:var(--ink2);border-bottom:3px solid transparent;margin-bottom:-1px;font-size:14px}
+.tabs button.on{color:var(--brand);border-bottom-color:var(--brand)}
+.sub{display:none}.sub.on{display:block}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.sp{flex:1}
+hr.s{border:0;border-top:1px solid var(--line);margin:14px 0}
+.ref{font-size:12px;color:var(--ink2);line-height:1.6}
+.ref li{margin-bottom:3px}
+/* NIHSS */
+.ni{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:11px 0;border-bottom:1px dashed var(--line)}
+.ni:last-child{border-bottom:0}
+.ni .h{font-weight:700;font-size:14px}
+.ni .h small{display:block;color:var(--ink3);font-weight:500;font-size:11.5px}
+.ni .sidebox{margin-top:8px;padding:8px 10px;border-radius:9px;background:color-mix(in srgb,#7c3aed 7%,var(--panel));border:1px dashed color-mix(in srgb,#7c3aed 40%,var(--line));display:none}
+.ni .sidebox.on{display:block}
+.ni .sidebox .q{font-size:12px;font-weight:700;color:#7c3aed;margin-bottom:5px}
+.limb-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.limb{border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+.limb .lh{font-weight:800;font-size:13px;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.limb.L .lh{color:#c2410c}.limb.R .lh{color:#1d4ed8}
+.sidechip{display:inline-block;padding:0 7px;border-radius:5px;font-size:11.5px;color:#fff}
+.sidechip.L{background:#c2410c}.sidechip.R{background:#1d4ed8}
+.brainwrap{display:flex;gap:12px;align-items:center}
+.brainwrap svg{flex:none}
+.reason{font-size:13px;padding:6px 9px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);margin-bottom:5px;display:flex;gap:8px}
+.reason .s{flex:none;font-weight:800;font-size:11px;padding:1px 6px;border-radius:5px;color:#fff;background:var(--ink3);height:fit-content}
+.reason .s.R{background:#1d4ed8}.reason .s.L{background:#c2410c}.reason .s.BS,.reason .s.CB,.reason .s.B{background:#7c3aed}
+/* triage */
+.tri-wrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+.case{font-size:16px;line-height:1.8}
+.case .vit{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.case .vit span{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-size:14px}
+.ttag{width:300px;border-radius:10px 10px 6px 6px;background:#fffdf5;color:#1f2937;border:1px solid #d6cfb6;box-shadow:0 6px 24px rgba(0,0,0,.12);overflow:hidden;font-size:12px;position:relative}
+.ttag .hole{width:16px;height:16px;border-radius:50%;background:var(--bg);border:2px solid #b9b29a;margin:8px auto 2px}
+.ttag .ttl{text-align:center;font-weight:800;font-size:17px;letter-spacing:.3em;padding:2px 0 6px;border-bottom:2px solid #1f2937}
+.ttag .fx{display:grid;grid-template-columns:76px 1fr;border-bottom:1px solid #d6cfb6}
+.ttag .fx div{padding:4px 6px}.ttag .fx div:first-child{background:#f3eedb;font-weight:700;border-right:1px solid #d6cfb6}
+.ttag .fx input{width:100%;border:0;background:transparent;font-size:12px;outline:0;color:#111}
+.ttag .cats{display:flex;justify-content:space-around;padding:6px;font-weight:800;font-size:13px;border-bottom:2px solid #1f2937;background:#f3eedb}
+.ttag .cats span{padding:0 6px;border-radius:4px}.ttag .cats span.on{outline:2px solid #111}
+.strip{height:44px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:20px;letter-spacing:.2em;cursor:pointer;border-top:2px dashed rgba(0,0,0,.35);transition:transform .35s ease,opacity .35s ease,height .35s ease;position:relative;user-select:none}
+.strip:hover{filter:brightness(1.08)}
+.strip.black{background:#111;color:#fff}.strip.red{background:#dc2626;color:#fff}.strip.yellow{background:#facc15;color:#111}.strip.green{background:#16a34a;color:#fff}
+.strip.torn{height:0;opacity:0;transform:translateY(30px) rotate(-6deg);border:0;overflow:hidden}
+.strip .ins{position:absolute;right:8px;font-size:10px;letter-spacing:0;font-weight:600;opacity:.75}
+.flow{display:flex;flex-direction:column;gap:6px}
+.flow .fs{display:flex;gap:8px;align-items:center;font-size:13.5px}
+.flow .fs .q{flex:1;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.flow .fs .a{font-weight:700;white-space:nowrap}
+.flow .fs.end .q{border-width:2px}
+.colorchip{display:inline-block;padding:2px 10px;border-radius:6px;font-weight:800}
+.colorchip.black{background:#111;color:#fff}.colorchip.red{background:#dc2626;color:#fff}.colorchip.yellow{background:#facc15;color:#111}.colorchip.green{background:#16a34a;color:#fff}
+.scorebar{display:flex;gap:14px;font-size:13px;color:var(--ink2)}
+.scorebar b{font-size:20px;color:var(--ink)}
+/* home */
+.homegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+.hcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;box-shadow:var(--sh);transition:transform .12s,border-color .12s;text-align:left}
+.hcard:hover{transform:translateY(-2px);border-color:var(--brand)}
+.hcard .ic{width:40px;height:40px;border-radius:10px;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.hcard .ic svg{width:22px;height:22px;stroke:var(--brand);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hcard h3{margin:0 0 4px;font-size:16px}
+.hcard p{margin:0;color:var(--ink2);font-size:13px}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(2,6,23,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+.modal.on{display:flex}
+.modal .box{background:var(--panel);border-radius:14px;max-width:620px;width:100%;max-height:85vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal .box header{display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+.modal .box header h3{margin:0;font-size:16px;flex:1}
+.modal .box .bd{padding:16px 18px;font-size:14px;line-height:1.75}
+.modal .box .bd p{margin:0 0 10px}
+.range{display:flex;align-items:center;gap:12px}
+.range input[type=range]{flex:1;accent-color:var(--brand);height:28px}
+.range .rv{font-size:26px;font-weight:800;min-width:76px;text-align:right;color:var(--brand)}
+.preset{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.bar{height:12px;border-radius:99px;background:var(--line);overflow:hidden;position:relative}
+.bar i{display:block;height:100%;background:var(--brand);border-radius:99px;transition:width .2s}
+.bar.over i{background:var(--warn)}
+.bar .mk{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+@media (max-width:1100px){.cols{grid-template-columns:1fr}.sticky{position:static}.tri-wrap{grid-template-columns:1fr}}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .nav{position:fixed;left:0;top:0;bottom:0;width:260px;z-index:50;transform:translateX(-100%);transition:transform .2s}
+  .nav.open{transform:none;box-shadow:0 0 40px rgba(0,0,0,.4)}
+  .menu-btn{display:inline-flex}
+  .page{padding:16px 14px 50px}.topbar{padding:10px 14px}
+  .ni{grid-template-columns:1fr}
+  .grid.g3{grid-template-columns:1fr 1fr}
+  .steps li{grid-template-columns:1fr}
+}
+@media print{
+  .nav,.topbar,.btn,.help,.tabs{display:none!important}
+  .app{display:block}.page{display:none!important}.page.on{display:block!important;padding:0}
+  .cols{grid-template-columns:1fr 1fr}.card{box-shadow:none;break-inside:avoid}
+  body{background:#fff}
+}
+
+.fld .pm{border:0;border-right:1px solid var(--line);background:var(--panel2);color:var(--brand);font-weight:800;font-size:17px;padding:0 12px;cursor:pointer;min-width:42px}
+.fld .pm:active{background:var(--brand);color:#fff}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+.tw table.t{min-width:520px}
+.fld .errmsg{font-size:11.5px;color:var(--danger);margin-top:3px;font-weight:600}
+.cols>div,.tri-wrap>div{min-width:0}
+@media (max-width:820px){.ttag{width:100%;max-width:320px}.ttag+.tiny{width:auto!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="nav" aria-label="ツール一覧">
+    <div class="brand"><b>救急・ICU 臨床支援ツール</b><small>富山市民病院 救急・ICU ／ v2.0</small></div>
+    <ul id="nav-list"></ul>
+    <div class="foot"><button id="theme-btn" type="button">ライト／ダーク切替</button><div>完全オフライン・データ非保存<br>判断の補助ツールです</div></div>
+  </nav>
+  <main>
+    <div class="topbar"><button class="btn sm menu-btn" id="menu-btn" type="button">☰</button><div><h1 id="tb-title"></h1><div class="sub" id="tb-sub"></div></div><span class="sp"></span><button class="btn sm" type="button" onclick="window.print()">印刷</button></div>
+    <div id="pages"></div>
+  </main>
+</div>
+<div class="modal" id="mdl" role="dialog" aria-modal="true"><div class="box"><header><h3 id="mdl-t"></h3><button class="btn sm" id="mdl-x" type="button">閉じる</button></header><div class="bd" id="mdl-b"></div></div></div>
+<script>/* ==========================================================
+   臨床計算ロジック（純粋関数）  ― UIから独立させ自動テスト可能にしている
+   ========================================================== */
+(function (root) {
+  'use strict';
+  var L = {};
+  var isN = function (v) { return typeof v === 'number' && isFinite(v); };
+  L.isN = isN;
+  L.r = function (v, d) { if (!isN(v)) return null; var m = Math.pow(10, d || 0); return Math.round(v * m) / m; };
+
+  /* ---------------- 酸素デバイス（当院早見表） ---------------- */
+  L.O2 = {
+    nasal: { 1: 24, 2: 28, 3: 32, 4: 36 },
+    oxymask: { 5: 40, 6: 47, 7: 50, 8: 53, 9: 57, 10: 62 },
+    reservoir: { 8: 70, 10: 80 },
+    blenderDials: [28, 33, 35, 40, 60, 80, 98],
+    blenderRows: {
+      3: [14, 13, 13, 12, 7, 5, 4],
+      4: [20, 19, 17, 15, 9, 6, 4],
+      5: [28, 25, 24, 21, 12, 8, 6],
+      6: [35, 32, 30, 24, 14, 9, 7],
+      7: [42, 40, 37, 31, 17, 11, 8],
+      8: [48, 47, 42, 36, 19, 12, 10],
+      9: [53, 54, 49, 39, 22, 14, 11],
+      10: [57, 61, 57, 45, 24, 15, 13]
+    },
+    notes: {
+      nasal: '流量4L以下は加湿不要。ただし患者に自覚症状（鼻腔乾燥など）があれば4L以下でも加湿を開始する。',
+      oxymask: '使用前にディフューザーの破損がないか確認する。5L以上で加湿器を使用する。',
+      reservoir: '使用前にリザーバーバッグが膨らんでいることを確認し、使用中もバッグがしぼまないことを確認する。5L以上で加湿器を使用する。'
+    }
+  };
+
+  /** device: room|nasal|oxymask|reservoir|blender|manual  戻り値 {fio2(0-1), text, note, blenderValue} */
+  L.fio2 = function (device, flow, dial, manualPct) {
+    var O = L.O2, pct = null, text = '', note = '', bv = null;
+    if (device === 'room') { pct = 21; text = '室内気'; }
+    else if (device === 'nasal' || device === 'oxymask' || device === 'reservoir') {
+      pct = O[device][flow] != null ? O[device][flow] : null;
+      text = { nasal: '鼻カニューラ', oxymask: 'オキシマスク', reservoir: 'リザーバーマスク' }[device] + (flow ? ' ' + flow + 'L/分' : '');
+      note = O.notes[device];
+    } else if (device === 'blender') {
+      var di = O.blenderDials.indexOf(+dial);
+      if (di >= 0) pct = +dial;
+      if (di >= 0 && O.blenderRows[flow]) bv = O.blenderRows[flow][di];
+      text = 'ブレンダー流量計 ダイヤル' + (dial ? dial + '%' : '');
+    } else if (device === 'manual') {
+      if (isN(manualPct) && manualPct >= 21 && manualPct <= 100) pct = manualPct;
+      text = 'FiO₂直接入力';
+    }
+    return { fio2: pct == null ? null : pct / 100, pct: pct, text: text, note: note, blenderValue: bv };
+  };
+
+  /* ---------------- 血液ガス ---------------- */
+  L.severinghaus = function (po2) { // SO2(%)
+    if (!isN(po2) || po2 <= 0) return null;
+    return 100 / (23400 / (Math.pow(po2, 3) + 150 * po2) + 1);
+  };
+
+  /**
+   * p: {ph,pco2,hco3,po2,fio2(0-1),spo2,na,cl,alb,lac,age,patm,respChronic:'acute'|'chronic'|''}
+   */
+  L.abg = function (p) {
+    var o = { steps: [], flags: [], primary: null, disorders: [] };
+    var ph = p.ph, c = p.pco2, h = p.hco3;
+    // 0) 整合性チェック（Henderson-Hasselbalch）
+    if (isN(ph) && isN(c) && isN(h)) {
+      var hCalc = 0.0307 * c * Math.pow(10, ph - 6.1);
+      o.hCalc = hCalc;
+      if (Math.abs(hCalc - h) > 3) o.flags.push({ lv: 'warn', t: '入力値の整合性に注意：pH・PaCO₂から計算したHCO₃⁻は ' + hCalc.toFixed(1) + ' mEq/L（入力 ' + h + '）。転記ミスや静脈血混入の可能性を確認してください。' });
+    }
+    // 1) pH
+    if (isN(ph)) {
+      o.phState = ph < 7.35 ? 'acidemia' : ph > 7.45 ? 'alkalemia' : 'normal';
+      o.steps.push({ k: 'pH', t: ph < 7.35 ? 'アシデミア（pH ' + ph + ' < 7.35）' : ph > 7.45 ? 'アルカレミア（pH ' + ph + ' > 7.45）' : 'pHは基準範囲（7.35〜7.45）', lv: ph < 7.2 || ph > 7.6 ? 'danger' : (ph < 7.35 || ph > 7.45) ? 'warn' : 'ok' });
+    }
+    // 2) 一次性障害
+    if (isN(ph) && isN(c) && isN(h)) {
+      var rA = c > 45, rK = c < 35, mA = h < 22, mK = h > 26, prim = null;
+      if (ph < 7.35) {
+        if (rA && mA) { prim = 'mixed-acid'; }
+        else if (rA) prim = 'resp-acid';
+        else if (mA) prim = 'met-acid';
+      } else if (ph > 7.45) {
+        if (rK && mK) prim = 'mixed-alk';
+        else if (rK) prim = 'resp-alk';
+        else if (mK) prim = 'met-alk';
+      } else {
+        if (rA && mK) prim = ph < 7.40 ? 'resp-acid' : 'met-alk';
+        else if (rK && mA) prim = ph < 7.40 ? 'met-acid' : 'resp-alk';
+        else if (rA && !mK) prim = 'resp-acid';
+        else if (rK && !mA) prim = 'resp-alk';
+        else if (mA) prim = 'met-acid';
+        else if (mK) prim = 'met-alk';
+      }
+      o.primary = prim;
+      var name = {
+        'resp-acid': '呼吸性アシドーシス', 'resp-alk': '呼吸性アルカローシス', 'met-acid': '代謝性アシドーシス', 'met-alk': '代謝性アルカローシス',
+        'mixed-acid': '呼吸性＋代謝性アシドーシス（混合性）', 'mixed-alk': '呼吸性＋代謝性アルカローシス（混合性）'
+      };
+      if (prim) { o.disorders.push(name[prim]); o.steps.push({ k: '一次性障害', t: name[prim] + (ph >= 7.35 && ph <= 7.45 ? '（pHは代償により基準範囲内）' : ''), lv: 'info' }); }
+      else o.steps.push({ k: '一次性障害', t: 'PaCO₂・HCO₃⁻ともに明らかな一次性異常なし（AGは別途確認）', lv: 'ok' });
+
+      // 3) 代償の評価
+      var comp = null;
+      if (prim === 'met-acid') {
+        var e = 1.5 * h + 8;
+        comp = '予測PaCO₂（Winterの式 1.5×HCO₃⁻+8±2）= ' + (e - 2).toFixed(1) + '〜' + (e + 2).toFixed(1) + ' mmHg';
+        if (c > e + 2) { comp += ' → 実測が高い：呼吸性アシドーシスの合併（換気不全）'; o.disorders.push('呼吸性アシドーシスの合併'); }
+        else if (c < e - 2) { comp += ' → 実測が低い：呼吸性アルカローシスの合併'; o.disorders.push('呼吸性アルカローシスの合併'); }
+        else comp += ' → 適切な呼吸性代償';
+      } else if (prim === 'met-alk') {
+        var e2 = 0.7 * h + 21;
+        comp = '予測PaCO₂（0.7×HCO₃⁻+21±2）= ' + (e2 - 2).toFixed(1) + '〜' + (e2 + 2).toFixed(1) + ' mmHg';
+        if (c > e2 + 2) { comp += ' → 実測が高い：呼吸性アシドーシスの合併'; o.disorders.push('呼吸性アシドーシスの合併'); }
+        else if (c < e2 - 2) { comp += ' → 実測が低い：呼吸性アルカローシスの合併'; o.disorders.push('呼吸性アルカローシスの合併'); }
+        else comp += ' → 適切な呼吸性代償';
+      } else if (prim === 'resp-acid') {
+        var d = c - 40, ea = 24 + 0.1 * d, ec = 24 + 0.35 * d;
+        comp = '予測HCO₃⁻：急性 ' + ea.toFixed(1) + '（+1/10mmHg）／慢性 ' + ec.toFixed(1) + '（+3.5/10mmHg）mEq/L';
+        if (h < ea - 2) { comp += ' → 急性の予測より低い：代謝性アシドーシスの合併'; o.disorders.push('代謝性アシドーシスの合併'); }
+        else if (h > ec + 2) { comp += ' → 慢性の予測より高い：代謝性アルカローシスの合併'; o.disorders.push('代謝性アルカローシスの合併'); }
+        else if (h <= ea + 2) comp += ' → 急性呼吸性アシドーシスに合致';
+        else if (h >= ec - 2) comp += ' → 慢性（代償された）呼吸性アシドーシスに合致';
+        else comp += ' → 急性と慢性の中間（慢性の急性増悪など）';
+      } else if (prim === 'resp-alk') {
+        var d2 = 40 - c, ea2 = 24 - 0.2 * d2, ec2 = 24 - 0.4 * d2;
+        comp = '予測HCO₃⁻：急性 ' + ea2.toFixed(1) + '（−2/10mmHg）／慢性 ' + ec2.toFixed(1) + '（−4/10mmHg）mEq/L';
+        if (h > ea2 + 2) { comp += ' → 急性の予測より高い：代謝性アルカローシスの合併'; o.disorders.push('代謝性アルカローシスの合併'); }
+        else if (h < ec2 - 2) { comp += ' → 慢性の予測より低い：代謝性アシドーシスの合併'; o.disorders.push('代謝性アシドーシスの合併'); }
+        else if (h >= ea2 - 2) comp += ' → 急性呼吸性アルカローシスに合致';
+        else if (h <= ec2 + 2) comp += ' → 慢性（代償された）呼吸性アルカローシスに合致';
+        else comp += ' → 急性と慢性の中間';
+      } else if (prim && prim.indexOf('mixed') === 0) {
+        comp = '呼吸性・代謝性の両方が同方向に異常 → 代償ではなく混合性障害';
+      }
+      if (comp) o.steps.push({ k: '代償の評価', t: comp, lv: o.disorders.length > 1 ? 'warn' : 'info' });
+    }
+    // 4) アニオンギャップ
+    if (isN(p.na) && isN(p.cl) && isN(h)) {
+      var ag = p.na - p.cl - h, cag = ag;
+      o.ag = ag;
+      if (isN(p.alb)) { cag = ag + 2.5 * (4.0 - p.alb); o.cag = cag; }
+      var agv = isN(p.alb) ? cag : ag;
+      var agt = 'AG = ' + ag.toFixed(1) + (isN(p.alb) ? '／Alb補正AG = ' + cag.toFixed(1) : '（Alb未入力：低Alb時は過小評価に注意）') + ' mEq/L（基準 12±2）';
+      var agHigh = agv > 14;
+      var mi = o.disorders.indexOf('代謝性アシドーシス');
+      if (agHigh) {
+        agt += ' → AG開大';
+        if (mi >= 0) o.disorders[mi] = 'AG開大性代謝性アシドーシス';
+        else if (o.disorders.join().indexOf('AG開大') < 0) o.disorders.push('AG開大性代謝性アシドーシス' + (h >= 22 ? '（HCO₃⁻正常域でも潜在）' : ''));
+      } else if (h < 22) {
+        agt += ' → AG正常（高Cl性）代謝性アシドーシス';
+        if (mi >= 0) o.disorders[mi] = 'AG正常（高Cl性）代謝性アシドーシス';
+      }
+      o.steps.push({ k: 'アニオンギャップ', t: agt, lv: agHigh ? 'warn' : 'info' });
+      // 5) Δ比
+      if (agHigh && h < 24) {
+        var dr = (agv - 12) / (24 - h); o.deltaRatio = dr;
+        var dt = 'Δ比 =（AG−12）/（24−HCO₃⁻）= ' + dr.toFixed(2);
+        if (dr < 0.4) { dt += ' → AG正常（高Cl性）代謝性アシドーシスの合併'; o.disorders.push('AG正常代謝性アシドーシスの合併'); }
+        else if (dr < 1) { dt += ' → AG開大＋AG正常アシドーシスの混在の可能性'; o.disorders.push('AG正常代謝性アシドーシスの合併の可能性'); }
+        else if (dr <= 2) dt += ' → 純粋なAG開大性代謝性アシドーシス';
+        else { dt += ' → 代謝性アルカローシスの合併（または慢性呼吸性アシドーシスによるHCO₃⁻上昇）'; o.disorders.push('代謝性アルカローシスの合併'); }
+        o.steps.push({ k: 'Δ比', t: dt, lv: dr < 1 || dr > 2 ? 'warn' : 'info' });
+      } else if (agHigh && h >= 24) {
+        o.steps.push({ k: 'Δ比', t: 'HCO₃⁻が24以上なのにAG開大 → 代謝性アルカローシスとAG開大性アシドーシスの合併を疑う', lv: 'warn' });
+        o.disorders.push('代謝性アルカローシス＋AG開大性アシドーシスの合併');
+      }
+    }
+    // 6) 乳酸
+    if (isN(p.lac)) {
+      o.steps.push({ k: '乳酸', t: 'Lac ' + p.lac + ' mmol/L' + (p.lac >= 4 ? ' → 著明高値（組織低灌流・ショックを強く疑う）' : p.lac > 2 ? ' → 高値（敗血症性ショック基準 >2）' : ' → 基準範囲'), lv: p.lac >= 4 ? 'danger' : p.lac > 2 ? 'warn' : 'ok' });
+    }
+    // 7) 酸素化
+    var f = p.fio2;
+    if (isN(p.po2) && isN(f) && f > 0) {
+      var pf = p.po2 / f; o.pf = pf;
+      var pft = 'P/F比 = ' + pf.toFixed(0);
+      if (pf <= 100) pft += '（≦100：重度の酸素化障害）'; else if (pf <= 200) pft += '（≦200：中等度）'; else if (pf <= 300) pft += '（≦300：軽度）'; else pft += '（>300）';
+      o.steps.push({ k: '酸素化', t: pft, lv: pf <= 100 ? 'danger' : pf <= 300 ? 'warn' : 'ok' });
+      if (isN(c)) {
+        var patm = isN(p.patm) ? p.patm : 760;
+        var PAO2 = f * (patm - 47) - c / 0.8; o.PAO2 = PAO2; o.aado2 = PAO2 - p.po2;
+        var norm = isN(p.age) ? p.age / 4 + 4 : null; o.aaNorm = norm;
+        var at = 'A-aDO₂ = ' + o.aado2.toFixed(1) + ' mmHg（PAO₂ ' + PAO2.toFixed(1) + '）';
+        if (f > 0.215) at += '　※酸素投与下では基準値が大きく上昇するため経時比較に用いる';
+        else if (norm != null) at += '　年齢補正の目安 ≦' + norm.toFixed(0) + (o.aado2 > norm ? ' → 開大（V/Q不均等・シャント・拡散障害）' : ' → 正常範囲（低酸素なら肺胞低換気を考える）');
+        o.steps.push({ k: 'A-aDO₂', t: at, lv: (f <= 0.215 && norm != null && o.aado2 > norm) ? 'warn' : 'info' });
+      }
+    }
+    if (isN(p.spo2) && isN(f) && f > 0) {
+      o.sf = p.spo2 / f;
+      o.steps.push({ k: 'S/F比', t: 'S/F比 = ' + o.sf.toFixed(0) + (p.spo2 > 97 ? '（SpO₂>97%ではS/F比の信頼性が低下）' : ''), lv: 'info' });
+    }
+    return o;
+  };
+
+  /* ---------------- 循環 ---------------- */
+  L.bsa = function (ht, wt) { return isN(ht) && isN(wt) && ht > 0 && wt > 0 ? 0.007184 * Math.pow(wt, 0.425) * Math.pow(ht, 0.725) : null; };
+  L.hemo = function (p) {
+    var o = {};
+    o.bsa = L.bsa(p.ht, p.wt);
+    o.map = isN(p.map) ? p.map : (isN(p.sbp) && isN(p.dbp) ? (p.sbp + 2 * p.dbp) / 3 : null);
+    o.mapCalculated = !isN(p.map);
+    if (isN(p.hr) && isN(p.sbp) && p.sbp > 0) o.si = p.hr / p.sbp;
+    if (isN(p.hr) && isN(o.map) && o.map > 0) o.msi = p.hr / o.map;
+    if (isN(p.sbp) && isN(p.dbp)) { o.pp = p.sbp - p.dbp; o.ppp = o.pp / p.sbp * 100; }
+    if (isN(p.co)) {
+      if (o.bsa) o.ci = p.co / o.bsa;
+      if (isN(p.hr) && p.hr > 0) { o.sv = p.co * 1000 / p.hr; if (o.bsa) o.svi = o.sv / o.bsa; }
+      if (isN(o.map) && isN(p.cvp) && p.co > 0) { o.svr = (o.map - p.cvp) * 80 / p.co; if (o.bsa) o.svri = o.svr * o.bsa; }
+      if (isN(o.map)) o.cpo = o.map * p.co / 451;
+      if (isN(p.hb) && isN(p.sao2)) {
+        var cao2 = 1.34 * p.hb * p.sao2 / 100 + 0.003 * (isN(p.pao2) ? p.pao2 : 0);
+        o.cao2 = cao2; o.do2 = p.co * cao2 * 10; if (o.bsa) o.do2i = o.do2 / o.bsa;
+      }
+    }
+    if (isN(p.uo) && isN(p.wt) && p.wt > 0) o.uokg = p.uo / p.wt;
+    // ショックの型（CI・SVRがあるとき）
+    if (isN(o.ci) && isN(o.svr)) {
+      var lowCI = o.ci < 2.2, highSVR = o.svr > 1200, lowSVR = o.svr < 800;
+      var cvpHigh = isN(p.cvp) ? p.cvp >= 12 : null, pawpHigh = isN(p.pawp) ? p.pawp >= 18 : null;
+      if (!lowCI && lowSVR) o.shockType = { k: 'distributive', t: '血液分布異常性ショックのパターン（CI保たれ・SVR低下）：敗血症、アナフィラキシー、神経原性など' };
+      else if (lowCI && highSVR) {
+        if (cvpHigh === false && pawpHigh !== true) o.shockType = { k: 'hypovolemic', t: '循環血液量減少性ショックのパターン（CI低下・SVR上昇・CVP低値）：出血、脱水など' };
+        else if (pawpHigh === true) o.shockType = { k: 'cardiogenic', t: '心原性ショックのパターン（CI低下・SVR上昇・PAWP上昇）：ACS、心筋症、不整脈など' };
+        else if (cvpHigh === true) o.shockType = { k: 'obstructive-or-cardiogenic', t: 'CI低下・SVR上昇・CVP上昇：心原性（右心不全含む）または閉塞性（心タンポナーデ、緊張性気胸、肺塞栓）。エコーで鑑別' };
+        else o.shockType = { k: 'lowflow', t: '低心拍出＋血管収縮のパターン。CVP/PAWP・エコーで前負荷を評価して鑑別' };
+      } else if (lowCI) o.shockType = { k: 'lowflow', t: 'CI低下（SVRは正常域）：前負荷・心収縮力の評価を' };
+    }
+    // Forrester
+    if (isN(o.ci) && isN(p.pawp)) {
+      var hi = p.pawp > 18, lo = o.ci < 2.2;
+      o.forrester = !lo && !hi ? 'I' : !lo && hi ? 'II' : lo && !hi ? 'III' : 'IV';
+    }
+    // Clinical Scenario（急性心不全）
+    if (isN(p.sbp)) o.cs = p.sbp > 140 ? 1 : p.sbp >= 100 ? 2 : 3;
+    return o;
+  };
+  /** Nohria-Stevenson  wet:うっ血所見数, cold:低灌流所見数 */
+  L.nohria = function (wet, cold) {
+    var W = wet > 0, C = cold > 0;
+    if (!W && !C) return { p: 'A', t: 'Warm & Dry（プロファイルA）', d: 'うっ血・低灌流所見なし。' };
+    if (W && !C) return { p: 'B', t: 'Warm & Wet（プロファイルB）', d: 'うっ血あり・灌流保持。利尿薬・血管拡張薬が中心。' };
+    if (W && C) return { p: 'C', t: 'Cold & Wet（プロファイルC）', d: 'うっ血＋低灌流。強心薬・血管収縮薬、機械的補助の検討。最も予後不良。' };
+    return { p: 'L', t: 'Cold & Dry（プロファイルL）', d: '低灌流のみ。前負荷不足の評価（輸液負荷の検討）、強心薬。' };
+  };
+
+  /* ---------------- NIHSS ---------------- */
+  L.nihssItems = ['n1a', 'n1b', 'n1c', 'n2', 'n3', 'n4', 'n5L', 'n5R', 'n6L', 'n6R', 'n7', 'n8', 'n9', 'n10', 'n11'];
+  L.nihssTotal = function (s) {
+    var t = 0, missing = [];
+    L.nihssItems.forEach(function (k) { var v = s[k]; if (v === 'UN') return; if (isN(v)) t += v; else missing.push(k); });
+    return { total: t, missing: missing };
+  };
+  L.nihssSeverity = function (t) {
+    if (t === 0) return { t: '症状なし', lv: 'ok' };
+    if (t <= 4) return { t: '軽症（1〜4）', lv: 'info' };
+    if (t <= 15) return { t: '中等症（5〜15）', lv: 'warn' };
+    if (t <= 20) return { t: '中等症〜重症（16〜20）', lv: 'danger' };
+    return { t: '重症（21〜42）', lv: 'danger' };
+  };
+  /** 昏睡（1a=3）時の規定スコア */
+  L.nihssComaDefaults = { n1b: 2, n1c: 2, n4: 3, n5L: 4, n5R: 4, n6L: 4, n6R: 4, n7: 0, n8: 2, n9: 3, n10: 2, n11: 2 };
+
+  var opp = function (s) { return s === 'L' ? 'R' : s === 'R' ? 'L' : s; };
+  var sideJ = function (s) { return s === 'L' ? '左' : s === 'R' ? '右' : s === 'B' ? '両側' : ''; };
+  L.sideJ = sideJ;
+
+  /**
+   * 責任病変の検討
+   * s: 各項目スコア（数値 or 'UN'）＋ 側性情報
+   *   faceSide, visualSide, gazeDir（眼球が向いている方向）, ataxiaSide, sensorySide, neglectSide: 'L'|'R'|'B'|''
+   *   dominant: 'L'（言語優位半球。既定は左）
+   * 戻り値: { hemi:'R'|'L'|'B'|'BS'|'CB'|'', label, reasons[], territories[], warnings[], lvo, scoreR, scoreL }
+   *   ※「R/L」は病変がある大脳半球（患者の右/左）
+   */
+  L.nihssLocalize = function (s) {
+    var v = function (k) { return isN(s[k]) ? s[k] : 0; };
+    var o = { reasons: [], territories: [], warnings: [], lvo: false, scoreR: 0, scoreL: 0, brainstem: 0, cerebellum: 0 };
+    var dom = s.dominant === 'R' ? 'R' : 'L', nondom = opp(dom);
+    var add = function (hemi, pts, why) { if (hemi === 'R') o.scoreR += pts; else if (hemi === 'L') o.scoreL += pts; o.reasons.push({ hemi: hemi, t: why }); };
+
+    var armL = v('n5L'), armR = v('n5R'), legL = v('n6L'), legR = v('n6R');
+    var limbL = armL + legL, limbR = armR + legR;
+    var motor = limbL > 0 && limbR > 0 ? 'B' : limbL > 0 ? 'L' : limbR > 0 ? 'R' : '';
+    o.motorSide = motor;
+
+    // 1) 運動麻痺：錐体路は延髄で交叉 → 大脳病変は「麻痺と反対側」
+    if (motor === 'L' || motor === 'R') {
+      add(opp(motor), 3, sideJ(motor) + '上下肢の運動麻痺 → 対側（' + sideJ(opp(motor)) + '）の錐体路障害');
+    } else if (motor === 'B') {
+      o.brainstem += 2;
+      o.reasons.push({ hemi: 'B', t: '両側上下肢の麻痺 → 脳幹（脳底動脈領域）または両側大脳病変' });
+      var diff = limbL - limbR;
+      if (Math.abs(diff) >= 2) add(diff > 0 ? 'R' : 'L', 1, '麻痺は' + sideJ(diff > 0 ? 'L' : 'R') + '優位');
+    }
+    // 2) 顔面麻痺
+    var face = v('n4'), fs = s.faceSide || '';
+    if (face > 0 && (fs === 'L' || fs === 'R')) {
+      if (motor === 'L' || motor === 'R') {
+        if (fs === motor) add(opp(fs), 1, sideJ(fs) + '顔面麻痺（四肢麻痺と同側）→ ' + sideJ(opp(fs)) + '大脳半球病変と矛盾しない');
+        else {
+          o.brainstem += 3; o.crossed = true;
+          o.reasons.push({ hemi: 'BS', t: '交叉性麻痺：' + sideJ(fs) + '顔面＋' + sideJ(motor) + '上下肢 → ' + sideJ(fs) + '側の脳幹（橋・延髄）病変を疑う' });
+        }
+      } else if (motor === '') {
+        if (face === 3) { o.brainstem += 1; o.reasons.push({ hemi: 'BS', t: sideJ(fs) + '顔面の完全麻痺（上部も含む）のみ → 末梢性顔面神経麻痺や同側脳幹（橋）病変も鑑別' }); }
+        else add(opp(fs), 1, sideJ(fs) + '中枢性顔面麻痺 → ' + sideJ(opp(fs)) + '大脳半球');
+      }
+    } else if (face > 0 && fs === '') o.warnings.push('顔面麻痺の側を選択すると判定精度が上がります。');
+    else if (face > 0 && fs === 'B') { o.brainstem += 1; o.reasons.push({ hemi: 'B', t: '両側顔面麻痺 → 脳幹・両側病変・末梢性（Guillain-Barré等）を鑑別' }); }
+
+    // 3) 感覚障害
+    var sen = v('n8'), ss = s.sensorySide || '';
+    if (sen > 0 && (ss === 'L' || ss === 'R')) add(opp(ss), 2, sideJ(ss) + '半身の感覚障害 → ' + sideJ(opp(ss)) + '側の視床・内包・頭頂葉など');
+    else if (sen > 0 && ss === 'B') { o.brainstem += 1; o.reasons.push({ hemi: 'B', t: '両側の感覚障害 → 脳幹・両側病変' }); }
+    else if (sen > 0) o.warnings.push('感覚障害の側を選択してください。');
+
+    // 4) 視野
+    var vis = v('n3'), vs = s.visualSide || '';
+    if (vis > 0 && (vs === 'L' || vs === 'R')) add(opp(vs), 2, sideJ(vs) + '同名半盲 → ' + sideJ(opp(vs)) + '側の視放線・後頭葉（PCA/MCA）');
+    else if (vis === 3 || (vis > 0 && vs === 'B')) { o.brainstem += 1; o.reasons.push({ hemi: 'B', t: '両側半盲・皮質盲 → 両側後頭葉（脳底動脈先端部／両側PCA）' }); }
+    else if (vis > 0) o.warnings.push('視野障害の側（どちらの視野が欠けているか）を選択してください。');
+
+    // 5) 共同偏視：大脳半球病変では「病巣側」を向く（麻痺側と反対）。橋病変・けいれんでは麻痺側を向く
+    var gaze = v('n2'), gd = s.gazeDir || '';
+    if (gaze > 0 && (gd === 'L' || gd === 'R')) {
+      if ((motor === 'L' || motor === 'R') && gd === motor) {
+        o.brainstem += 2;
+        o.warnings.push('眼球が麻痺側（' + sideJ(gd) + '）を向いています（逆向き共同偏視）。橋病変、てんかん発作（刺激性病変）、視床出血を考慮してください。');
+        o.reasons.push({ hemi: 'BS', t: '麻痺側を向く共同偏視 → 橋（' + sideJ(opp(gd)) + '側）病変・けいれん発作を鑑別' });
+      } else add(gd, 2, '共同偏視（' + sideJ(gd) + '向き）→ 大脳半球病変では眼球は病巣側を向く：' + sideJ(gd) + '半球');
+    } else if (gaze === 1 && !gd) o.reasons.push({ hemi: '', t: '部分的注視麻痺（単一の眼運動神経麻痺を含む）→ 脳幹病変の可能性も考慮' });
+    else if (gaze === 2 && !gd) o.warnings.push('共同偏視の方向（眼球がどちらを向いているか）を選択してください。');
+
+    // 6) 言語（失語）→ 優位半球
+    var lang = v('n9');
+    if (lang > 0 && lang < 3) add(dom, 3, '失語 → 言語優位半球（' + sideJ(dom) + '）の皮質（MCA領域）');
+    else if (lang === 3) { if (v('n1a') >= 3) o.reasons.push({ hemi: '', t: '昏睡による全失語相当（局在徴候としては使えない）' }); else add(dom, 3, '全失語 → 言語優位半球（' + sideJ(dom) + '）の広範なMCA領域'); }
+
+    // 7) 消去現象・無視 → 多くは劣位（右）半球頭頂葉
+    var neg = v('n11'), ns = s.neglectSide || '';
+    if (neg > 0 && (ns === 'L' || ns === 'R')) add(opp(ns), 3, sideJ(ns) + '側の半側空間無視・消去現象 → ' + sideJ(opp(ns)) + '頭頂葉' + (opp(ns) === nondom ? '（劣位半球の典型）' : ''));
+    else if (neg > 0) o.warnings.push('無視・消去現象がどちら側の空間に出ているかを選択してください。');
+
+    // 8) 運動失調 → 小脳は同側支配
+    var atx = v('n7'), as = s.ataxiaSide || '';
+    if (atx > 0 && (as === 'L' || as === 'R')) {
+      var limbOnAtx = as === 'L' ? limbL : limbR;
+      if (limbOnAtx > 0) o.reasons.push({ hemi: opp(as), t: sideJ(as) + '失調性片麻痺 → ' + sideJ(opp(as)) + '側の橋底部・内包（ラクナ）' });
+      else { o.cerebellum += 3; o.reasons.push({ hemi: 'CB', t: '麻痺のない' + sideJ(as) + '上下肢の運動失調 → ' + sideJ(as) + '小脳半球（同側支配）または同側脳幹' }); }
+    } else if (atx > 0 && as === 'B') { o.cerebellum += 2; o.reasons.push({ hemi: 'CB', t: '両側の運動失調 → 小脳虫部・脳幹' }); }
+    else if (atx > 0) o.warnings.push('運動失調の側を選択してください。');
+
+    // 9) 意識
+    if (v('n1a') >= 2) o.reasons.push({ hemi: '', t: '高度の意識障害（1a≧2）→ 広範な半球病変（脳浮腫）、脳幹（網様体）病変、または非脳卒中（低血糖・けいれん後など）を鑑別' });
+
+    // ---- 総合判定 ----
+    var R = o.scoreR, Lh = o.scoreL;
+    if (o.crossed || (o.brainstem >= 3 && o.brainstem >= Math.max(R, Lh))) { o.hemi = 'BS'; o.label = '脳幹（椎骨脳底動脈系）病変を疑う'; }
+    else if (o.cerebellum >= 3 && R + Lh <= 1) { o.hemi = 'CB'; o.label = '小脳（または脳幹）病変を疑う'; }
+    else if (R > 0 && Lh > 0 && Math.min(R, Lh) >= 3) {
+      o.hemi = 'B'; o.label = '左右両方の大脳半球所見あり（両側・多発病変、または評価の再確認が必要）';
+    } else if (R > Lh) { o.hemi = 'R'; o.label = '右大脳半球（患者の右）病変を疑う'; }
+    else if (Lh > R) { o.hemi = 'L'; o.label = '左大脳半球（患者の左）病変を疑う'; }
+    else { o.hemi = ''; o.label = R === 0 && Lh === 0 ? '局在を示す所見は入力されていません' : '左右の所見が拮抗しており判定困難'; }
+
+    // 矛盾チェック
+    if ((motor === 'L' && lang > 0 && lang < 3 && dom === 'L') || (motor === 'R' && lang > 0 && lang < 3 && dom === 'R'))
+      o.warnings.push('麻痺側と同側の半球に失語が出ています（例：左麻痺＋失語）。交叉性失語、言語優位半球が右（左利き）、両側・多発性塞栓の可能性。所見を再確認してください。');
+    if (ns && (motor === 'L' || motor === 'R') && ns !== motor && neg > 0)
+      o.warnings.push('麻痺側と無視側が逆です。通常、無視は麻痺側の空間に出ます。所見を再確認してください。');
+    if (vs && (vs === 'L' || vs === 'R') && (motor === 'L' || motor === 'R') && vs !== motor && vis > 0)
+      o.warnings.push('半盲側と麻痺側が逆です。通常同側に出ます（例：右半球病変→左麻痺＋左同名半盲）。両側・多発病変も考慮してください。');
+
+    // ---- 血管領域の検討（大脳半球と判定したとき）----
+    if (o.hemi === 'R' || o.hemi === 'L') {
+      var H = o.hemi, ws = opp(H);
+      var arm = ws === 'L' ? armL : armR, leg = ws === 'L' ? legL : legR;
+      var aphasia = lang > 0 && lang < 3 && H === dom;
+      var neglect = neg > 0 && ns === ws;
+      var gazeTo = gaze > 0 && gd === H;
+      var hemianopia = vis > 0 && vs === ws;
+      var cortical = aphasia || neglect || gazeTo;
+      var side = sideJ(H);
+      if (cortical && (arm > 0 || leg > 0)) {
+        if (arm >= leg) o.territories.push({ t: side + '中大脳動脈（MCA）領域', d: '皮質徴候（' + [aphasia ? '失語' : '', neglect ? '無視' : '', gazeTo ? '共同偏視' : ''].filter(Boolean).join('・') + '）＋上肢≧下肢の麻痺' + (face > 0 ? '・顔面麻痺' : '') });
+        else o.territories.push({ t: side + '前大脳動脈（ACA）領域、またはMCA＋ACA', d: '下肢優位の麻痺＋皮質徴候' });
+        if (gazeTo || (aphasia && lang >= 2) || (neglect && (arm >= 2 || leg >= 2))) o.lvo = true;
+      } else if (cortical) {
+        o.territories.push({ t: side + 'MCA皮質枝領域（分枝閉塞）', d: '麻痺を伴わない皮質徴候' + (aphasia ? '（失語）' : '') + (neglect ? '（無視）' : '') });
+      } else if (arm > 0 || leg > 0) {
+        if (leg > arm) o.territories.push({ t: side + '前大脳動脈（ACA）領域', d: '下肢優位の麻痺（皮質徴候なし）' });
+        else if (sen > 0 && ss === ws) o.territories.push({ t: side + '視床〜内包（ラクナ：感覚運動性脳卒中）または放線冠', d: '皮質徴候のない半身の運動＋感覚障害' });
+        else o.territories.push({ t: side + '内包・放線冠・橋底部（ラクナ梗塞：純粋運動性片麻痺）または穿通枝領域', d: '皮質徴候・感覚障害を伴わない片麻痺（顔面・上肢・下肢が同程度）' });
+      } else if (sen > 0 && ss === ws && !hemianopia) o.territories.push({ t: side + '視床（後大脳動脈穿通枝）', d: '純粋感覚性脳卒中' });
+      if (hemianopia) o.territories.push({ t: side + '後大脳動脈（PCA）領域（後頭葉）' + (cortical ? 'またはMCA深部（視放線）' : ''), d: sideJ(ws) + '同名半盲' });
+      if (v('n1a') >= 2 && (aphasia || neglect)) o.warnings.push('意識障害＋皮質徴候：広範な半球梗塞（悪性MCA梗塞）や脳出血の可能性。頭蓋内圧亢進に注意。');
+    } else if (o.hemi === 'BS') {
+      o.territories.push({ t: '椎骨脳底動脈系（橋・延髄・中脳）', d: '交叉性麻痺、両側症状、逆向き共同偏視、脳神経症状' });
+      if (motor === 'B' || v('n1a') >= 2) { o.lvo = true; o.warnings.push('両側麻痺・意識障害を伴う脳幹症状：脳底動脈閉塞を疑い、緊急で血管評価を。'); }
+    } else if (o.hemi === 'CB') {
+      o.territories.push({ t: '小脳（PICA/AICA/SCA）または脳幹', d: '麻痺を伴わない運動失調。NIHSSは後方循環を過小評価しやすい（めまい・嘔吐・歩行障害も確認）' });
+    } else if (o.hemi === 'B') {
+      o.territories.push({ t: '両側・多発病変（心原性塞栓など）', d: '左右双方の半球所見' });
+    }
+    return o;
+  };
+
+  /* ---------------- GCS / JCS ---------------- */
+  L.gcs = function (e, v, m) { return isN(e) && isN(v) && isN(m) ? e + v + m : null; };
+
+  /* ---------------- 栄養・水分 ---------------- */
+  L.hb = function (sex, age, ht, wt) { // Harris-Benedict（原法）
+    if (!isN(age) || !isN(ht) || !isN(wt)) return null;
+    return sex === 'F' ? 655.1 + 9.563 * wt + 1.850 * ht - 4.676 * age : 66.47 + 13.75 * wt + 5.003 * ht - 6.755 * age;
+  };
+  L.nutri = function (p) {
+    var o = {};
+    if (!isN(p.ht) || !isN(p.wt) || p.ht <= 0 || p.wt <= 0) return o;
+    var m = p.ht / 100;
+    o.bmi = p.wt / (m * m);
+    o.ibw = 22 * m * m;
+    o.adjbw = p.wt > o.ibw ? o.ibw + 0.25 * (p.wt - o.ibw) : p.wt;
+    var basis = p.basis || 'auto';
+    if (basis === 'auto') basis = o.bmi >= 30 ? 'adjusted' : 'actual';
+    o.basisUsed = basis;
+    o.dw = basis === 'ideal' ? o.ibw : basis === 'adjusted' ? o.adjbw : p.wt;
+    // エネルギー
+    if (p.method === 'hb') {
+      o.bee = L.hb(p.sex, p.age, p.ht, o.dw);
+      o.fullKcal = o.bee != null ? o.bee * (p.af || 1) * (p.sf || 1) : null;
+    } else {
+      o.fullKcal = o.dw * (isN(p.kcalPerKg) ? p.kcalPerKg : 25);
+    }
+    o.targetPct = isN(p.targetPct) ? p.targetPct : 100;
+    o.targetKcal = o.fullKcal != null ? o.fullKcal * o.targetPct / 100 : null;
+    o.fullProtein = o.dw * (isN(p.proteinPerKg) ? p.proteinPerKg : 1.2);
+    o.targetProtein = p.proteinFollowPct ? o.fullProtein * o.targetPct / 100 : o.fullProtein;
+    // 水分
+    o.fluid = o.dw * (isN(p.fluidPerKg) ? p.fluidPerKg : 30);
+    var w = o.dw; o.holliday = w <= 10 ? 100 * w : w <= 20 ? 1000 + 50 * (w - 10) : 1500 + 20 * (w - 20);
+    return o;
+  };
+  /** 現在の投与量 */
+  L.intake = function (items) {
+    var kcal = 0, protein = 0, water = 0, lipidKcal = 0, glucoseG = 0;
+    items.forEach(function (it) { kcal += it.kcal || 0; protein += it.protein || 0; water += it.water || 0; lipidKcal += it.lipidKcal || 0; glucoseG += it.glucoseG || 0; });
+    var npc = kcal - protein * 4;
+    var n = protein / 6.25;
+    return { kcal: kcal, protein: protein, water: water, glucoseG: glucoseG, npcn: n > 0 ? npc / n : null };
+  };
+  /** 漸増スケジュール */
+  L.ramp = function (fullKcal, startPct, endPct, days) {
+    var rows = []; days = Math.max(1, Math.round(days));
+    for (var i = 0; i < days; i++) {
+      var pct = days === 1 ? endPct : startPct + (endPct - startPct) * i / (days - 1);
+      rows.push({ day: i + 1, pct: pct, kcal: fullKcal * pct / 100 });
+    }
+    return rows;
+  };
+  /** 不感蒸泄・代謝水 */
+  L.insensible = function (wt, temp) {
+    if (!isN(wt)) return null;
+    var base = 15 * wt;
+    var add = isN(temp) && temp > 37 ? base * 0.15 * (temp - 37) : 0;
+    return { insensible: base + add, base: base, feverAdd: add, metabolic: 5 * wt };
+  };
+  /** Refeeding症候群リスク（NICE CG32） */
+  L.refeeding = function (r) {
+    var major = 0, minor = 0;
+    if (r.bmi16) major++; if (r.loss15) major++; if (r.noIntake10) major++; if (r.lowElectrolytes) major++;
+    if (r.bmi185) minor++; if (r.loss10) minor++; if (r.noIntake5) minor++; if (r.alcoholDrugs) minor++;
+    var high = major >= 1 || minor >= 2;
+    var extreme = r.bmi14 || r.noIntake15;
+    return { high: high, extreme: !!extreme, major: major, minor: minor };
+  };
+
+  /* ---------------- SOFA / 敗血症 ---------------- */
+  L.sofa = function (p) {
+    var o = { parts: {}, missing: [] };
+    // 呼吸
+    if (isN(p.pf)) o.parts.resp = p.pf < 100 && p.respSupport ? 4 : p.pf < 200 && p.respSupport ? 3 : p.pf < 300 ? 2 : p.pf < 400 ? 1 : 0;
+    else o.missing.push('呼吸');
+    // 凝固
+    if (isN(p.plt)) o.parts.coag = p.plt < 20 ? 4 : p.plt < 50 ? 3 : p.plt < 100 ? 2 : p.plt < 150 ? 1 : 0; else o.missing.push('凝固');
+    // 肝
+    if (isN(p.bil)) o.parts.liver = p.bil >= 12 ? 4 : p.bil >= 6 ? 3 : p.bil >= 2 ? 2 : p.bil >= 1.2 ? 1 : 0; else o.missing.push('肝');
+    // 循環（μg/kg/分）
+    var doa = p.doa || 0, dob = p.dob || 0, ne = p.ne || 0, epi = p.epi || 0;
+    if (doa > 15 || epi > 0.1 || ne > 0.1) o.parts.cv = 4;
+    else if (doa > 5 || epi > 0 || ne > 0) o.parts.cv = 3;
+    else if (doa > 0 || dob > 0) o.parts.cv = 2;
+    else if (isN(p.map)) o.parts.cv = p.map < 70 ? 1 : 0;
+    else o.missing.push('循環');
+    // 中枢神経
+    if (isN(p.gcs)) o.parts.cns = p.gcs < 6 ? 4 : p.gcs <= 9 ? 3 : p.gcs <= 12 ? 2 : p.gcs <= 14 ? 1 : 0; else o.missing.push('中枢神経');
+    // 腎
+    var rc = null;
+    if (isN(p.cr)) rc = p.cr >= 5 ? 4 : p.cr >= 3.5 ? 3 : p.cr >= 2 ? 2 : p.cr >= 1.2 ? 1 : 0;
+    var ru = null;
+    if (isN(p.uo)) ru = p.uo < 200 ? 4 : p.uo < 500 ? 3 : 0;
+    if (rc != null || ru != null) o.parts.renal = Math.max(rc || 0, ru || 0); else o.missing.push('腎');
+    o.total = 0; for (var k in o.parts) o.total += o.parts[k];
+    return o;
+  };
+  L.qsofa = function (rr, sbp, mental) {
+    var n = 0, c = [];
+    if (isN(rr) && rr >= 22) { n++; c.push('呼吸数≧22'); }
+    if (isN(sbp) && sbp <= 100) { n++; c.push('収縮期血圧≦100'); }
+    if (mental) { n++; c.push('意識変容'); }
+    return { score: n, items: c };
+  };
+  L.sirs = function (p) {
+    var n = 0, c = [];
+    if (isN(p.temp) && (p.temp > 38 || p.temp < 36)) { n++; c.push('体温'); }
+    if (isN(p.hr) && p.hr > 90) { n++; c.push('心拍数'); }
+    if ((isN(p.rr) && p.rr > 20) || (isN(p.pco2) && p.pco2 < 32)) { n++; c.push('呼吸'); }
+    if ((isN(p.wbc) && (p.wbc > 12000 || p.wbc < 4000)) || p.bands) { n++; c.push('白血球'); }
+    return { score: n, items: c };
+  };
+  /** 持続投与量換算：mg（薬剤量）/ mL（総量）, 流量 mL/h, 体重 kg → μg/kg/分 */
+  L.dose = function (mg, ml, rate, wt) {
+    if (!isN(mg) || !isN(ml) || !isN(rate) || !isN(wt) || ml <= 0 || wt <= 0) return null;
+    return (mg * 1000 / ml) * rate / 60 / wt;
+  };
+  L.rateFromDose = function (mg, ml, dose, wt) {
+    if (!isN(mg) || !isN(ml) || !isN(dose) || !isN(wt) || mg <= 0) return null;
+    return dose * wt * 60 / (mg * 1000 / ml);
+  };
+
+
+  /* ---------------- NEWS2（RCP 2017） ---------------- */
+  /** p: {rr, spo2, scale:1|2, o2:bool, sbp, hr, acvpu:'A'|'C'|'V'|'P'|'U', temp} */
+  L.news2 = function (p) {
+    var sc = {}, miss = [];
+    var b = function (k, v, f) { if (isN(v)) sc[k] = f(v); else miss.push(k); };
+    b('rr', p.rr, function (v) { return v <= 8 ? 3 : v <= 11 ? 1 : v <= 20 ? 0 : v <= 24 ? 2 : 3; });
+    if (p.scale === 2) b('spo2', p.spo2, function (v) {
+      if (v <= 83) return 3; if (v <= 85) return 2; if (v <= 87) return 1; if (v <= 92) return 0;
+      if (!p.o2) return 0; return v <= 94 ? 1 : v <= 96 ? 2 : 3;
+    });
+    else b('spo2', p.spo2, function (v) { return v <= 91 ? 3 : v <= 93 ? 2 : v <= 95 ? 1 : 0; });
+    sc.o2 = p.o2 ? 2 : 0;
+    b('sbp', p.sbp, function (v) { return v <= 90 ? 3 : v <= 100 ? 2 : v <= 110 ? 1 : v <= 219 ? 0 : 3; });
+    b('hr', p.hr, function (v) { return v <= 40 ? 3 : v <= 50 ? 1 : v <= 90 ? 0 : v <= 110 ? 1 : v <= 130 ? 2 : 3; });
+    if (p.acvpu) sc.acvpu = p.acvpu === 'A' ? 0 : 3; else miss.push('acvpu');
+    b('temp', p.temp, function (v) { return v <= 35.0 ? 3 : v <= 36.0 ? 1 : v <= 38.0 ? 0 : v <= 39.0 ? 1 : 2; });
+    var t = 0, red = false; for (var k in sc) { t += sc[k]; if (sc[k] === 3) red = true; }
+    var risk = t >= 7 ? 'high' : t >= 5 ? 'medium' : red ? 'lowmed' : 'low';
+    return { parts: sc, total: t, red3: red, risk: risk, missing: miss };
+  };
+
+  /* ---------------- 災害トリアージ（START法） ---------------- */
+  /** c: {walk, breathing, airwayBreath, rr, radial, crt, obeys} */
+  L.start = function (c) {
+    var path = [];
+    if (c.walk) { path.push({ q: '歩行可能か', a: 'はい' }); return { color: 'green', path: path }; }
+    path.push({ q: '歩行可能か', a: 'いいえ' });
+    if (!c.breathing) {
+      path.push({ q: '自発呼吸があるか', a: 'なし' });
+      if (c.airwayBreath) { path.push({ q: '気道確保で呼吸が出現するか', a: '出現した' }); return { color: 'red', path: path }; }
+      path.push({ q: '気道確保で呼吸が出現するか', a: '出現しない' });
+      return { color: 'black', path: path };
+    }
+    path.push({ q: '自発呼吸があるか', a: 'あり' });
+    if (c.rr >= 30 || c.rr < 10) { path.push({ q: '呼吸数 10〜29回/分か', a: c.rr + '回/分（範囲外）' }); return { color: 'red', path: path }; }
+    path.push({ q: '呼吸数 10〜29回/分か', a: c.rr + '回/分（範囲内）' });
+    if (!c.radial || c.crt > 2) { path.push({ q: '橈骨動脈触知可・CRT≦2秒か', a: !c.radial ? '橈骨動脈触知不可' : 'CRT ' + c.crt + '秒' }); return { color: 'red', path: path }; }
+    path.push({ q: '橈骨動脈触知可・CRT≦2秒か', a: 'はい（CRT ' + c.crt + '秒）' });
+    if (!c.obeys) { path.push({ q: '簡単な指示に従えるか', a: '従えない' }); return { color: 'red', path: path }; }
+    path.push({ q: '簡単な指示に従えるか', a: '従える' });
+    return { color: 'yellow', path: path };
+  };
+  L.triageColors = {
+    black: { j: '黒', cat: '0', name: '死亡または救命困難（不処置群）' },
+    red: { j: '赤', cat: 'I', name: '最優先治療群（重症）' },
+    yellow: { j: '黄', cat: 'II', name: '待機的治療群（中等症）' },
+    green: { j: '緑', cat: 'III', name: '保留群（軽症）' }
+  };
+
+  root.L = L;
+  if (typeof module !== 'undefined' && module.exports) module.exports = L;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* ===== 共通ユーティリティ ===== */
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const ST = {}; // セグメント選択の状態
+const rawVal = id => { const e = document.getElementById(id); if (!e) return null; const t = String(e.value).trim().replace(/,/g, '.'); if (t === '' || !/^[-+]?(\d+\.?\d*|\.\d+)$/.test(t)) return null; const n = parseFloat(t); return isFinite(n) ? n : null; };
+// 入力可能範囲（data-min/max）外の値は計算に用いない（欄は赤く表示される）
+const val = id => { const v = rawVal(id); if (v == null) return null; const e = document.getElementById(id); const mn = e.dataset.min, mx = e.dataset.max; if ((mn != null && v < +mn) || (mx != null && v > +mx)) return null; return v; };
+const setv = (id, v) => { const e = document.getElementById(id); if (e) e.value = v == null ? '' : v; };
+const chk = id => { const e = document.getElementById(id); return !!(e && e.checked); };
+const fx = (v, d = 0) => (L.isN(v) ? v.toFixed(d) : '—');
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const help = k => `<button type="button" class="help" data-help="${k}" aria-label="解説">?</button>`;
+
+function F(id, label, unit, o = {}) {
+  const neg = o.min != null && o.min < 0;
+  return `<div class="fld" id="w_${id}"><label for="${id}">${label}${o.help ? help(o.help) : ''}</label><div class="in">${neg ? `<button type="button" class="pm" data-pm="${id}" aria-label="符号を切り替え">±</button>` : ''}<input id="${id}" ${neg ? 'type="text" inputmode="decimal" autocomplete="off"' : 'type="number" inputmode="decimal" step="any"'} ${o.ph != null ? `placeholder="${o.ph}"` : ''} ${o.v != null ? `value="${o.v}"` : ''} ${o.min != null ? `data-min="${o.min}"` : ''} ${o.max != null ? `data-max="${o.max}"` : ''}>${unit ? `<span class="u">${unit}</span>` : ''}</div>${o.hint ? `<div class="hint">${o.hint}</div>` : ''}</div>`;
+}
+function SEL(id, label, opts, o = {}) {
+  return `<div class="fld"><label for="${id}">${label}${o.help ? help(o.help) : ''}</label><div class="in"><select id="${id}">${opts.map(x => Array.isArray(x) ? `<option value="${x[0]}" ${x[0] === o.v ? 'selected' : ''}>${x[1]}</option>` : `<option ${x === o.v ? 'selected' : ''}>${x}</option>`).join('')}</select>${o.unit ? `<span class="u">${o.unit}</span>` : ''}</div>${o.hint ? `<div class="hint">${o.hint}</div>` : ''}</div>`;
+}
+function SEG(name, opts, cls = '', def) {
+  if (def !== undefined && ST[name] === undefined) ST[name] = def;
+  return `<div class="seg ${cls}" data-segname="${name}">${opts.map(o => `<button type="button" data-seg="${name}" data-v="${o[0]}" class="${String(ST[name]) === String(o[0]) ? 'on' : ''}">${o[1]}</button>`).join('')}</div>`;
+}
+function CHK(id, label, o = {}) { return `<label class="chk" id="c_${id}"><input type="checkbox" id="${id}" ${o.on ? 'checked' : ''}><span>${label}</span></label>`; }
+function CARD(title, body, o = {}) {
+  return `<section class="card" ${o.id ? `id="${o.id}"` : ''}><header><h2>${title}</h2>${o.tag ? `<span class="tag">${o.tag}</span>` : ''}<span class="sp"></span>${o.right || ''}</header><div class="bd">${body}</div></section>`;
+}
+function KPI(k, v, unit, lv, note, h) {
+  const empty = v === '—' || v == null;
+  return `<div class="kpi ${empty ? 'empty' : lv || ''}"><div class="k">${k}${h ? help(h) : ''}</div><div class="v">${empty ? '—' : v}${!empty && unit ? `<small>${unit}</small>` : ''}</div>${note ? `<div class="n">${note}</div>` : ''}</div>`;
+}
+const lvRange = (v, lo, hi, dlo, dhi) => !L.isN(v) ? '' : (L.isN(dlo) && v < dlo) || (L.isN(dhi) && v > dhi) ? 'danger' : (L.isN(lo) && v < lo) || (L.isN(hi) && v > hi) ? 'warn' : 'ok';
+
+function validate(scope) {
+  $$('input[type=number], input[data-min]', scope).forEach(e => {
+    const w = e.closest('.fld'); if (!w) return;
+    const t = String(e.value).trim(), v = rawVal(e.id);
+    const mn = e.dataset.min != null ? +e.dataset.min : null, mx = e.dataset.max != null ? +e.dataset.max : null;
+    const bad = (t !== '' && t !== '-' && v == null) || (v != null && ((mn != null && v < mn) || (mx != null && v > mx)));
+    w.classList.toggle('bad', bad);
+    let h = w.querySelector('.errmsg');
+    if (bad) { if (!h) { h = document.createElement('div'); h.className = 'errmsg'; w.appendChild(h); } h.textContent = v == null ? '数値を入力してください' : `入力範囲外（${mn != null ? mn : ''}〜${mx != null ? mx : ''}）：計算に使用しません`; }
+    else if (h) h.remove();
+  });
+}
+
+/* ===== ナビゲーション ===== */
+const PAGES = [];
+function page(id, title, sub, icon, build, compute) { PAGES.push({ id, title, sub, icon, build, compute }); }
+function go(id) {
+  $$('.page').forEach(p => p.classList.toggle('on', p.id === 'p-' + id));
+  $$('.nav li button').forEach(b => b.classList.toggle('on', b.dataset.go === id));
+  const P = PAGES.find(p => p.id === id);
+  $('#tb-title').textContent = P.title; $('#tb-sub').textContent = P.sub;
+  $('.nav').classList.remove('open');
+  try { history.replaceState(null, '', '#' + id); } catch (e) { }
+  window.scrollTo(0, 0);
+}
+const ICON = {
+  home: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
+  abg: '<path d="M12 3c3 4.5 6 8 6 11a6 6 0 0 1-12 0c0-3 3-6.5 6-11z"/><path d="M9 15h6"/>',
+  hemo: '<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+  nihss: '<path d="M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 6 1V5a3 3 0 0 0-3-1z"/><path d="M15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-6 1"/>',
+  nutri: '<path d="M7 3v8a3 3 0 0 0 6 0V3"/><path d="M10 3v18"/><path d="M17 3c-2 2-2 6 0 8v10"/>',
+  sepsis: '<circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3"/>',
+  news: '<path d="M4 19h16"/><path d="M6 16v-4M10 16V8M14 16v-6M18 16V5"/>',
+  sim: '<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M6 11h3l1.5-3 2.5 6 1.5-3H18"/><path d="M8 21h8"/>',
+  triage: '<path d="M7 3h10v18l-5-3-5 3z"/><path d="M7 13h10"/>'
+};
+const svgI = k => `<svg viewBox="0 0 24 24">${ICON[k]}</svg>`;
+
+/* ===== ヘルプ ===== */
+const HELP = {};
+function showHelp(k) {
+  const h = HELP[k]; if (!h) return;
+  $('#mdl-t').textContent = h.t; $('#mdl-b').innerHTML = h.b; $('#mdl').classList.add('on');
+}
+
+/* =========================================================
+   1. 血液ガス
+   ========================================================= */
+Object.assign(HELP, {
+  ph: { t: 'pH', b: '<p>基準 7.35〜7.45。7.35未満をアシデミア、7.45超をアルカレミアと呼ぶ。pHは「結果」であり、一次性障害の推定はPaCO₂とHCO₃⁻の向きで行う。</p>' },
+  pco2: { t: 'PaCO₂', b: '<p>基準 35〜45 mmHg。肺胞換気量の指標。高値は換気不全（呼吸性アシドーシス）、低値は過換気。</p>' },
+  hco3: { t: 'HCO₃⁻', b: '<p>基準 22〜26 mEq/L。代謝性成分の指標。本ツールではpH・PaCO₂から計算値（Henderson-Hasselbalch）も求め、入力値と3 mEq/L以上ずれる場合に転記ミスを警告する。</p>' },
+  ag: { t: 'アニオンギャップ（AG）', b: '<p>AG = Na⁺ −（Cl⁻ + HCO₃⁻）。基準 12±2（K⁺を含めない式）。</p><p>アルブミンが1 g/dL低下するごとにAGは約2.5低下するため、<b>補正AG = AG + 2.5 ×（4.0 − Alb）</b>で評価する。低Alb血症の重症患者でAG開大を見逃さないために重要。</p><p>AG開大の主因：乳酸アシドーシス、ケトアシドーシス、腎不全、中毒（メタノール・エチレングリコール・サリチル酸など）。</p>' },
+  delta: { t: 'Δ比（デルタ比）', b: '<p>Δ比 =（AG − 12）/（24 − HCO₃⁻）。AG開大性アシドーシスに他の代謝性障害が隠れていないかを見る。</p><p>&lt;0.4：AG正常（高Cl性）アシドーシスの合併／0.4〜1：混在の可能性／1〜2：純粋なAG開大性／&gt;2：代謝性アルカローシスの合併、または慢性呼吸性アシドーシスによるHCO₃⁻上昇。</p>' },
+  pf: { t: 'P/F比', b: '<p>PaO₂ / FiO₂。酸素化の指標。Berlin定義のARDSでは PEEP（またはCPAP）≧5 cmH₂O 下で、≦300 軽症、≦200 中等症、≦100 重症。</p><p>鼻カニューラ・マスクのFiO₂は換気量で変動する推定値であることに注意。</p>' },
+  aado2: { t: 'A-aDO₂（肺胞気-動脈血酸素分圧較差）', b: '<p>PAO₂ = FiO₂ ×（大気圧 − 47）− PaCO₂ / 0.8。A-aDO₂ = PAO₂ − PaO₂。</p><p>室内気での基準の目安は「年齢/4 + 4」。開大していればV/Q不均等・シャント・拡散障害、開大がなく低酸素なら肺胞低換気を考える。酸素投与下では基準値が上昇するため、同一条件での経時比較に使う。</p>' },
+  o2dev: { t: '当院の酸素デバイス早見表', b: '<p>本ツールのFiO₂は<b>当院の酸素療法デバイス確認表</b>に準拠している（鼻カニューラ1〜4L、オキシマスク5〜10L、リザーバーマスク8/10L、ブレンダー流量計早見表）。</p><p>低流量デバイスのFiO₂は患者の換気量・呼吸パターンで変動するため目安として扱う。</p>' },
+  odc: { t: '酸素解離曲線', b: '<p>Severinghausの式（pH 7.40・37℃・PaCO₂ 40の標準条件）で描画。アシドーシス・高体温・2,3-DPG上昇・高CO₂で右方移動（同じPaO₂でもSaO₂が低い）。</p><p>PaO₂ 60 mmHg ≒ SaO₂ 90%が急峻部の入口。ここを下回ると少しのPaO₂低下でSaO₂が急落する。</p>' },
+  winters: { t: '代償の予測式', b: '<p>代謝性アシドーシス：予測PaCO₂ = 1.5×HCO₃⁻ + 8 ± 2（Winterの式）</p><p>代謝性アルカローシス：予測PaCO₂ = 0.7×HCO₃⁻ + 21 ± 2</p><p>呼吸性アシドーシス：PaCO₂ 10上昇ごとに HCO₃⁻ 急性 +1、慢性 +3.5</p><p>呼吸性アルカローシス：PaCO₂ 10低下ごとに HCO₃⁻ 急性 −2、慢性 −4</p><p>予測範囲から外れていれば別の酸塩基障害の合併を考える。</p>' }
+});
+
+page('abg', '血液ガス評価', '酸塩基平衡の段階的解釈・酸素化評価（当院酸素早見表準拠）', 'abg', function () {
+  const O = L.O2;
+  const blTable = `<div class="tw"><table class="t" id="bl-table"><thead><tr><th>流量＼ダイヤル</th>${O.blenderDials.map(d => `<th data-dial="${d}">${d}%</th>`).join('')}</tr></thead><tbody>${Object.keys(O.blenderRows).map(f => `<tr data-flow="${f}"><td><b>${f}L</b></td>${O.blenderRows[f].map((v, i) => `<td data-dial="${O.blenderDials[i]}">${v}</td>`).join('')}</tr>`).join('')}</tbody></table></div><div class="tiny" style="margin-top:6px">当院ブレンダー流量計 トータルフロー早見表（表記どおり：行＝トータルフロー L/min、列＝ダイヤル目盛り）。FiO₂にはダイヤル目盛りの値を用いる。</div>`;
+  const devTable = `<div class="grid g3" style="gap:12px">
+    <div><b>鼻カニューラ</b><table class="t"><tbody>${Object.keys(O.nasal).map(k => `<tr><td>${k}L</td><td>${O.nasal[k]}%</td></tr>`).join('')}</tbody></table><div class="tiny">${O.notes.nasal}</div></div>
+    <div><b>オキシマスク</b><table class="t"><tbody>${Object.keys(O.oxymask).map(k => `<tr><td>${k}L</td><td>${O.oxymask[k]}%</td></tr>`).join('')}</tbody></table><div class="tiny">${O.notes.oxymask}</div></div>
+    <div><b>リザーバーマスク</b><table class="t"><tbody>${Object.keys(O.reservoir).map(k => `<tr><td>${k}L</td><td>${O.reservoir[k]}%</td></tr>`).join('')}</tbody></table><div class="tiny">${O.notes.reservoir}</div></div></div>`;
+  return `<div class="cols"><div>
+  ${CARD('測定値', `<div class="grid">
+     ${F('g_ph', 'pH', '', { help: 'ph', min: 6.5, max: 8, ph: '7.40' })}
+     ${F('g_pco2', 'PaCO₂', 'mmHg', { help: 'pco2', min: 5, max: 200, ph: '40' })}
+     ${F('g_po2', 'PaO₂', 'mmHg', { min: 10, max: 700, ph: '90' })}
+     ${F('g_hco3', 'HCO₃⁻', 'mEq/L', { help: 'hco3', min: 1, max: 70, ph: '24' })}
+     ${F('g_be', 'BE', 'mEq/L', { min: -40, max: 40, ph: '0' })}
+     ${F('g_spo2', 'SpO₂ / SaO₂', '%', { min: 30, max: 100 })}
+   </div><hr class="s"><div class="grid">
+     ${F('g_na', 'Na⁺', 'mEq/L', { min: 90, max: 200 })}
+     ${F('g_cl', 'Cl⁻', 'mEq/L', { min: 60, max: 150 })}
+     ${F('g_k', 'K⁺', 'mEq/L', { min: 1, max: 10 })}
+     ${F('g_alb', 'Alb', 'g/dL', { min: 0.5, max: 6, help: 'ag' })}
+     ${F('g_lac', '乳酸', 'mmol/L', { min: 0, max: 30 })}
+     ${F('g_glu', '血糖', 'mg/dL', { min: 10, max: 1500 })}
+     ${F('g_age', '年齢', '歳', { min: 0, max: 120 })}
+     ${F('g_patm', '大気圧', 'mmHg', { v: 760, min: 500, max: 800, hint: '平地は760' })}
+   </div>`, { tag: '動脈血', right: '<button class="btn sm" data-reset="abg">クリア</button>' })}
+  ${CARD('酸素投与条件', `${SEG('g_dev', [['room', '室内気'], ['nasal', '鼻カニューラ'], ['oxymask', 'オキシマスク'], ['reservoir', 'リザーバーマスク'], ['blender', 'ブレンダー流量計'], ['manual', 'FiO₂直接入力<br><span class="tiny">NHF・NPPV・人工呼吸器</span>']], '', 'room')}
+     <div id="g_devopts" style="margin-top:12px"></div>
+     <div id="g_devnote"></div>`, { tag: '当院早見表準拠', right: help('o2dev') })}
+  ${CARD('当院 酸素デバイス確認表', devTable + '<hr class="s"><b>ブレンダー流量計</b>' + blTable, { tag: '参照' })}
+  </div>
+  <div class="sticky" id="g_out"></div></div>`;
+}, computeABG);
+
+function abgDevOpts() {
+  const d = ST.g_dev, box = $('#g_devopts');
+  const prev = { f: val('g_flow'), dial: val('g_dial'), m: val('g_fio2m') };
+  let h = '';
+  if (d === 'nasal') h = SEL('g_flow', '酸素流量', [['', '選択'], 1, 2, 3, 4].map(x => Array.isArray(x) ? x : [String(x), x + ' L/分']));
+  else if (d === 'oxymask') h = SEL('g_flow', '酸素流量', [['', '選択'], 5, 6, 7, 8, 9, 10].map(x => Array.isArray(x) ? x : [String(x), x + ' L/分']));
+  else if (d === 'reservoir') h = SEL('g_flow', '酸素流量', [['', '選択'], 8, 10].map(x => Array.isArray(x) ? x : [String(x), x + ' L/分']));
+  else if (d === 'blender') h = `<div class="grid g2">${SEL('g_dial', 'ダイヤル目盛り', [['', '選択']].concat(L.O2.blenderDials.map(x => [String(x), x + '%'])))}${SEL('g_flow', 'トータルフロー（早見表の行）', [['', '選択']].concat(Object.keys(L.O2.blenderRows).map(x => [x, x + ' L/min'])))}</div>`;
+  else if (d === 'manual') h = `<div class="grid g2">${F('g_fio2m', 'FiO₂', '%', { min: 21, max: 100, ph: '40' })}</div>`;
+  box.innerHTML = h;
+  if (prev.f != null && $('#g_flow')) $('#g_flow').value = String(prev.f);
+  if (prev.dial != null && $('#g_dial')) $('#g_dial').value = String(prev.dial);
+  if (prev.m != null && $('#g_fio2m')) $('#g_fio2m').value = prev.m;
+}
+
+function odcSVG(po2, so2) {
+  const W = 340, H = 190, px = x => 34 + x / 150 * (W - 46), py = y => H - 26 - y / 100 * (H - 40);
+  let d = ''; for (let x = 1; x <= 150; x += 1) { d += (x === 1 ? 'M' : 'L') + px(x).toFixed(1) + ' ' + py(L.severinghaus(x)).toFixed(1); }
+  let pt = '';
+  if (L.isN(po2)) {
+    const pred = L.severinghaus(Math.min(po2, 150));
+    pt += `<line x1="${px(Math.min(po2, 150))}" y1="${py(0)}" x2="${px(Math.min(po2, 150))}" y2="${py(pred)}" stroke="var(--brand)" stroke-dasharray="3 3"/><circle cx="${px(Math.min(po2, 150))}" cy="${py(pred)}" r="5" fill="var(--brand)"/>`;
+    if (L.isN(so2)) pt += `<circle cx="${px(Math.min(po2, 150))}" cy="${py(so2)}" r="5" fill="none" stroke="var(--danger)" stroke-width="2"/>`;
+  }
+  const grid = [0, 30, 60, 90, 120, 150].map(x => `<line x1="${px(x)}" y1="${py(0)}" x2="${px(x)}" y2="${py(100)}" stroke="var(--line)"/><text x="${px(x)}" y="${H - 10}" font-size="10" text-anchor="middle" fill="var(--ink3)">${x}</text>`).join('') +
+    [0, 50, 90, 100].map(y => `<line x1="${px(0)}" y1="${py(y)}" x2="${px(150)}" y2="${py(y)}" stroke="var(--line)"/><text x="28" y="${py(y) + 3}" font-size="10" text-anchor="end" fill="var(--ink3)">${y}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="酸素解離曲線">${grid}<rect x="${px(0)}" y="${py(90)}" width="${px(60) - px(0)}" height="${py(0) - py(90)}" fill="var(--danger)" opacity=".06"/><path d="${d}" fill="none" stroke="var(--ink)" stroke-width="2"/>${pt}<text x="${px(150)}" y="${H - 1}" font-size="10" text-anchor="end" fill="var(--ink3)">PaO₂ (mmHg)</text><text x="4" y="12" font-size="10" fill="var(--ink3)">SaO₂ %</text></svg>`;
+}
+
+function computeABG() {
+  validate($('#p-abg'));
+  const d = ST.g_dev;
+  const fo = L.fio2(d, val('g_flow'), val('g_dial'), val('g_fio2m'));
+  // ブレンダー表ハイライト
+  $$('#bl-table td, #bl-table th').forEach(c => c.classList.remove('hl', 'hlx'));
+  if (d === 'blender') {
+    const dial = val('g_dial'), fl = val('g_flow');
+    if (dial != null) $$(`#bl-table [data-dial="${dial}"]`).forEach(c => c.classList.add('hl'));
+    if (fl != null) $$(`#bl-table tr[data-flow="${fl}"] td`).forEach(c => c.classList.add('hl'));
+    if (dial != null && fl != null) { const c = $(`#bl-table tr[data-flow="${fl}"] td[data-dial="${dial}"]`); if (c) c.classList.add('hlx'); }
+  }
+  let note = '';
+  if (fo.note) note += `<div class="alert info">${fo.note}</div>`;
+  if (d === 'blender' && fo.blenderValue != null) note += `<div class="alert ok">早見表の値：<b>${fo.blenderValue}</b>（ダイヤル ${val('g_dial')}% × ${val('g_flow')} L/min）　FiO₂は <b>${fo.pct}%</b> として計算します。</div>`;
+  if (d === 'manual') note += `<div class="alert info">ネーザルハイフロー・NPPV・人工呼吸器など、設定FiO₂が明確なデバイスで使用します。</div>`;
+  $('#g_devnote').innerHTML = note;
+
+  const p = { ph: val('g_ph'), pco2: val('g_pco2'), hco3: val('g_hco3'), po2: val('g_po2'), fio2: fo.fio2, spo2: val('g_spo2'), na: val('g_na'), cl: val('g_cl'), alb: val('g_alb'), lac: val('g_lac'), age: val('g_age'), patm: val('g_patm') };
+  const o = L.abg(p);
+  const has = [p.ph, p.pco2, p.hco3].every(L.isN);
+  let hero;
+  if (!has) hero = `<div class="hero"><div class="lbl">判定</div><div class="val" style="font-size:20px;color:var(--ink3)">pH・PaCO₂・HCO₃⁻を入力</div><div class="desc">入力と同時に段階的に解釈します。</div></div>`;
+  else {
+    const lv = o.disorders.length > 1 || (p.ph < 7.2 || p.ph > 7.6) ? 'danger' : o.disorders.length ? 'warn' : 'ok';
+    hero = `<div class="hero ${lv}"><div class="lbl">酸塩基平衡の判定</div><div class="val" style="font-size:22px">${o.disorders.length ? esc(o.disorders[0]) : '明らかな酸塩基障害なし'}</div>${o.disorders.length > 1 ? `<div class="desc">＋ ${o.disorders.slice(1).map(esc).join('<br>＋ ')}</div>` : ''}</div>`;
+  }
+  const pfLv = o.pf == null ? '' : o.pf <= 100 ? 'danger' : o.pf <= 300 ? 'warn' : 'ok';
+  const kp = `<div class="kpis">
+    ${KPI('FiO₂', fo.pct != null ? fo.pct : '—', '%', 'info', fo.text)}
+    ${KPI('P/F比', fx(o.pf), '', pfLv, '', 'pf')}
+    ${KPI('A-aDO₂', fx(o.aado2, 1), 'mmHg', '', o.aaNorm != null && p.fio2 <= 0.215 ? '目安≦' + o.aaNorm.toFixed(0) : '', 'aado2')}
+    ${KPI(o.cag != null ? '補正AG' : 'AG', fx(o.cag != null ? o.cag : o.ag, 1), '', o.ag == null ? '' : (o.cag != null ? o.cag : o.ag) > 14 ? 'warn' : 'ok', o.cag != null ? 'AG ' + fx(o.ag, 1) : '', 'ag')}
+    ${KPI('Δ比', fx(o.deltaRatio, 2), '', o.deltaRatio == null ? '' : (o.deltaRatio < 1 || o.deltaRatio > 2) ? 'warn' : 'ok', '', 'delta')}
+    ${KPI('計算HCO₃⁻', fx(o.hCalc, 1), '', '', 'H-H式')}
+    ${KPI('S/F比', fx(o.sf), '', '', '')}
+    ${KPI('乳酸', p.lac != null ? p.lac : '—', 'mmol/L', p.lac == null ? '' : p.lac >= 4 ? 'danger' : p.lac > 2 ? 'warn' : 'ok')}
+  </div>`;
+  const flags = o.flags.map(f => `<div class="alert ${f.lv}">${esc(f.t)}</div>`).join('');
+  const k = val('g_k'), glu = val('g_glu');
+  let extra = '';
+  if (k != null && (k >= 6 || k < 3)) extra += `<div class="alert ${k >= 6.5 || k < 2.5 ? 'danger' : 'warn'}">K⁺ ${k} mEq/L：${k >= 6 ? '高K血症（心電図変化を確認）' : '低K血症（不整脈に注意）'}</div>`;
+  if (glu != null && (glu < 70 || glu >= 250)) extra += `<div class="alert ${glu < 70 ? 'danger' : 'warn'}">血糖 ${glu} mg/dL：${glu < 70 ? '低血糖' : '高血糖（DKA/HHSならAG・ケトンを確認）'}</div>`;
+  const steps = o.steps.length ? `<ul class="steps">${o.steps.map(s => `<li class="${s.lv}"><span class="k">${s.k}</span><span>${esc(s.t)}</span></li>`).join('')}</ul>` : '<div class="muted">入力待ち</div>';
+  $('#g_out').innerHTML = CARD('評価結果', hero + flags + kp + extra, { right: help('winters') }) +
+    CARD('段階的解釈', steps, { tag: 'Step 1〜7' }) +
+    CARD('酸素解離曲線', odcSVG(p.po2, p.spo2) + `<div class="tiny">● PaO₂から予測されるSaO₂（標準条件）　◯ 入力したSpO₂/SaO₂${L.isN(p.po2) ? `　｜ 予測SaO₂ ${fx(L.severinghaus(p.po2), 1)}%` : ''}</div>`, { right: help('odc') });
+}
+
+/* =========================================================
+   2. 循環
+   ========================================================= */
+Object.assign(HELP, {
+  si: { t: 'ショックインデックス（SI）', b: '<p>SI = 心拍数 / 収縮期血圧。0.5〜0.7が正常。1.0以上で約1L（循環血液量の約20%）、1.5以上で約1.5L以上の出血量の目安（外傷初期診療）。β遮断薬内服・ペースメーカーでは過小評価。</p>' },
+  ppp: { t: '比例脈圧（Proportional pulse pressure）', b: '<p>（収縮期血圧−拡張期血圧）/ 収縮期血圧。<b>25%未満</b>は心係数2.2 L/分/m²未満を示唆する低灌流所見（Stevenson）。</p>' },
+  ci: { t: '心係数（CI）', b: '<p>CI = CO / 体表面積。基準 2.5〜4.0 L/分/m²。2.2未満で低心拍出（Forrester分類の境界）。</p>' },
+  svr: { t: '体血管抵抗（SVR）', b: '<p>SVR =（MAP − CVP）× 80 / CO。基準 800〜1200 dyn·s/cm⁵（SVRI 1970〜2390）。CVP未測定の場合は計算しない。</p>' },
+  cpo: { t: '心仕事量（CPO）', b: '<p>CPO = MAP × CO / 451（W）。<b>0.6 W未満</b>は心原性ショックで院内死亡の強い予測因子（SHOCK trial）。</p>' },
+  svv: { t: 'SVV / PPV（輸液反応性）', b: '<p>SVV・PPV が13%前後以上で輸液反応性ありを示唆。ただし<b>調節換気・1回換気量8 mL/kg以上・洞調律・閉胸</b>が前提。自発呼吸・不整脈・低1回換気量では信頼性が低く、PLR（受動的下肢挙上）テストなどで補う。</p>' },
+  do2: { t: '酸素運搬量（DO₂）', b: '<p>DO₂ = CO × CaO₂ × 10、CaO₂ = 1.34 × Hb × SaO₂ + 0.003 × PaO₂。DO₂I基準 500〜600 mL/分/m²。</p>' },
+  nohria: { t: 'Nohria-Stevenson分類', b: '<p>身体所見で急性心不全の血行動態を4群に分類する（JCS/JHFS 2017急性・慢性心不全診療ガイドライン、2021年フォーカスアップデート）。</p><p><b>うっ血所見</b>：起座呼吸、頸静脈圧の上昇、浮腫、腹水、肝頸静脈逆流<br><b>低灌流所見</b>：小さい脈圧、四肢冷感、傾眠、低Na血症、腎機能悪化</p><p>いずれか1つ以上でWet／Coldと判定する。</p>' },
+  forrester: { t: 'Forrester分類', b: '<p>肺動脈カテーテルによる分類。CI 2.2 L/分/m²、PAWP 18 mmHgで4群。I：正常、II：肺うっ血、III：末梢循環不全（低心拍出・前負荷不足）、IV：肺うっ血＋末梢循環不全。</p>' },
+  cs: { t: 'クリニカルシナリオ（CS）', b: '<p>急性心不全の初期対応を収縮期血圧で分類。CS1 >140 mmHg（血管拡張薬中心）、CS2 100〜140（利尿薬・血管拡張薬）、CS3 <100（輸液・強心薬）、CS4 急性冠症候群、CS5 右心不全。CS4・5は臨床所見で判断。</p>' }
+});
+
+page('hemo', '循環評価', 'バイタル・血行動態パラメータ・Nohria-Stevenson分類・ショックの型', 'hemo', function () {
+  const wet = [['w1', '起座呼吸'], ['w2', '頸静脈圧の上昇（頸静脈怒張）'], ['w3', '浮腫'], ['w4', '腹水'], ['w5', '肝頸静脈逆流']];
+  const cold = [['c1', '小さい脈圧（比例脈圧 <25%）<span class="tiny" id="ppp_auto"></span>'], ['c2', '四肢冷感'], ['c3', '傾眠・意識レベル低下'], ['c4', '低Na血症'], ['c5', '腎機能悪化（尿量減少）']];
+  return `<div class="cols"><div>
+  ${CARD('バイタルサイン', `<div class="grid">
+    ${F('h_hr', '心拍数', '回/分', { min: 20, max: 250 })}${F('h_sbp', '収縮期血圧', 'mmHg', { min: 30, max: 300 })}${F('h_dbp', '拡張期血圧', 'mmHg', { min: 10, max: 200 })}
+    ${F('h_map', 'MAP（実測）', 'mmHg', { min: 20, max: 250, hint: '空欄なら計算値' })}${F('h_ht', '身長', 'cm', { min: 50, max: 230 })}${F('h_wt', '体重', 'kg', { min: 2, max: 300 })}
+    ${F('h_uo', '尿量', 'mL/時', { min: 0, max: 2000 })}${F('h_lac', '乳酸', 'mmol/L', { min: 0, max: 30 })}</div>`, { right: '<button class="btn sm" data-reset="hemo">クリア</button>' })}
+  ${CARD('血行動態モニタリング', `<div class="grid">
+    ${F('h_co', 'CO（心拍出量）', 'L/分', { min: 0.5, max: 20 })}${F('h_cvp', 'CVP', 'mmHg', { min: -5, max: 40 })}${F('h_pawp', 'PAWP', 'mmHg', { min: 0, max: 50 })}
+    ${F('h_svv', 'SVV / PPV', '%', { min: 0, max: 50, help: 'svv' })}${F('h_scvo2', 'ScvO₂ / SvO₂', '%', { min: 10, max: 100 })}${F('h_hb', 'Hb', 'g/dL', { min: 2, max: 25 })}
+    ${F('h_sao2', 'SaO₂', '%', { min: 30, max: 100 })}${F('h_pao2', 'PaO₂', 'mmHg', { min: 10, max: 700 })}</div>
+    <div class="tiny" style="margin-top:8px">FloTrac/EV1000、PAカテーテル、心エコーの値を入力。未入力の項目は計算しません。</div>`, { tag: '任意' })}
+  ${CARD('Nohria-Stevenson分類（身体所見）', `<div class="grid g2" style="gap:16px"><div><div class="muted" style="font-weight:700;margin-bottom:6px">うっ血所見（Wet）</div><div class="chks" style="grid-template-columns:1fr">${wet.map(x => CHK('h_' + x[0], x[1])).join('')}</div></div>
+    <div><div class="muted" style="font-weight:700;margin-bottom:6px">低灌流所見（Cold）</div><div class="chks" style="grid-template-columns:1fr">${cold.map(x => CHK('h_' + x[0], x[1])).join('')}</div></div></div>`, { right: help('nohria') })}
+  </div><div class="sticky" id="h_out"></div></div>`;
+}, computeHemo);
+
+function nsGrid(p) {
+  const cell = (k, t, s) => `<div style="border:2px solid ${p === k ? 'var(--brand)' : 'var(--line)'};background:${p === k ? 'var(--brand-soft)' : 'var(--panel2)'};border-radius:9px;padding:8px;text-align:center"><div style="font-weight:800;font-size:18px;color:${p === k ? 'var(--brand)' : 'var(--ink3)'}">${k}</div><div style="font-size:12px;font-weight:700">${t}</div><div class="tiny">${s}</div></div>`;
+  return `<div style="display:grid;grid-template-columns:24px 1fr 1fr;gap:6px;align-items:center">
+   <div></div><div class="tiny" style="text-align:center;font-weight:700">うっ血なし（Dry）</div><div class="tiny" style="text-align:center;font-weight:700">うっ血あり（Wet）</div>
+   <div class="tiny" style="writing-mode:vertical-rl;font-weight:700">灌流良好</div>${cell('A', 'Warm & Dry', '')}${cell('B', 'Warm & Wet', '')}
+   <div class="tiny" style="writing-mode:vertical-rl;font-weight:700">低灌流</div>${cell('L', 'Cold & Dry', '')}${cell('C', 'Cold & Wet', '')}</div>`;
+}
+
+function computeHemo() {
+  validate($('#p-hemo'));
+  const p = { hr: val('h_hr'), sbp: val('h_sbp'), dbp: val('h_dbp'), map: val('h_map'), ht: val('h_ht'), wt: val('h_wt'), co: val('h_co'), cvp: val('h_cvp'), pawp: val('h_pawp'), hb: val('h_hb'), sao2: val('h_sao2'), pao2: val('h_pao2'), uo: val('h_uo') };
+  const o = L.hemo(p);
+  // 比例脈圧の自動チェック表示
+  const pa = $('#ppp_auto');
+  if (pa) pa.textContent = L.isN(o.ppp) ? `　計算値 ${o.ppp.toFixed(0)}%${o.ppp < 25 ? '（該当）' : ''}` : '';
+  if (!$('#h_c1').dataset.touched) $('#h_c1').checked = L.isN(o.ppp) && o.ppp < 25;
+  $$('#p-hemo .chk').forEach(c => c.classList.toggle('on', $('input', c).checked));
+  const wet = ['w1', 'w2', 'w3', 'w4', 'w5'].filter(k => chk('h_' + k)).length;
+  const cold = ['c1', 'c2', 'c3', 'c4', 'c5'].filter(k => chk('h_' + k)).length;
+  const ns = L.nohria(wet, cold);
+  const lac = val('h_lac'), svv = val('h_svv'), scv = val('h_scvo2');
+  const alerts = [];
+  if (L.isN(o.map) && o.map < 65) alerts.push(['danger', `MAP ${o.map.toFixed(0)} mmHg：65 mmHg未満（臓器灌流圧の低下）`]);
+  if (L.isN(o.si) && o.si >= 1) alerts.push([o.si >= 1.5 ? 'danger' : 'warn', `ショックインデックス ${o.si.toFixed(2)}：${o.si >= 1.5 ? '1.5以上（大量出血の目安）' : '1.0以上（ショックの可能性）'}`]);
+  if (L.isN(lac) && lac > 2) alerts.push([lac >= 4 ? 'danger' : 'warn', `乳酸 ${lac} mmol/L：組織低灌流を示唆`]);
+  if (L.isN(o.cpo) && o.cpo < 0.6) alerts.push(['danger', `CPO ${o.cpo.toFixed(2)} W：0.6 W未満（心原性ショックの予後不良因子）`]);
+  if (L.isN(o.uokg) && o.uokg < 0.5) alerts.push(['warn', `尿量 ${o.uokg.toFixed(2)} mL/kg/時：0.5未満（乏尿）`]);
+  if (L.isN(scv) && scv < 70) alerts.push(['warn', `ScvO₂ ${scv}%：70%未満（酸素需給バランスの悪化）`]);
+  if (L.isN(svv) && svv >= 13) alerts.push(['info', `SVV/PPV ${svv}%：輸液反応性ありを示唆（調節換気・洞調律などの前提条件を確認）`]);
+  const nsLv = { A: 'ok', B: 'warn', C: 'danger', L: 'warn' }[ns.p];
+  let shock = '';
+  if (o.shockType) shock = `<div class="alert ${o.shockType.k === 'distributive' || o.shockType.k === 'hypovolemic' ? 'warn' : 'danger'}"><div><b>ショックの型（血行動態パターン）</b><br>${esc(o.shockType.t)}</div></div>`;
+  const out = CARD('Nohria-Stevenson分類', `<div class="hero ${nsLv}" style="margin-bottom:10px"><div class="lbl">プロファイル</div><div class="val" style="font-size:22px">${ns.t}</div><div class="desc">${ns.d}　うっ血 ${wet}項目／低灌流 ${cold}項目</div></div>${nsGrid(ns.p)}`, { right: help('nohria') }) +
+    CARD('計算結果', `${alerts.map(a => `<div class="alert ${a[0]}">${a[1]}</div>`).join('')}${shock}<div class="kpis">
+      ${KPI('MAP', fx(o.map), 'mmHg', lvRange(o.map, 65, 110, 60), o.map != null ? (o.mapCalculated ? '計算値' : '実測') : '')}
+      ${KPI('ショックインデックス', fx(o.si, 2), '', L.isN(o.si) ? (o.si >= 1.5 ? 'danger' : o.si >= 1 ? 'warn' : 'ok') : '', '基準 0.5〜0.7', 'si')}
+      ${KPI('脈圧', fx(o.pp), 'mmHg', '', L.isN(o.ppp) ? '比例脈圧 ' + o.ppp.toFixed(0) + '%' : '', 'ppp')}
+      ${KPI('体表面積', fx(o.bsa, 2), 'm²', '', 'DuBois式')}
+      ${KPI('CI', fx(o.ci, 2), 'L/分/m²', lvRange(o.ci, 2.5, 4.0, 2.2), '基準 2.5〜4.0', 'ci')}
+      ${KPI('SV / SVI', L.isN(o.sv) ? o.sv.toFixed(0) + (L.isN(o.svi) ? ' / ' + o.svi.toFixed(0) : '') : '—', 'mL', lvRange(o.svi, 33, 47), '基準 SV 60〜100／SVI 33〜47')}
+      ${KPI('SVR', fx(o.svr), '', lvRange(o.svr, 800, 1200), L.isN(o.svri) ? 'SVRI ' + o.svri.toFixed(0) : '基準 800〜1200', 'svr')}
+      ${KPI('CPO', fx(o.cpo, 2), 'W', L.isN(o.cpo) ? (o.cpo < 0.6 ? 'danger' : 'ok') : '', '<0.6で予後不良', 'cpo')}
+      ${KPI('DO₂ / DO₂I', L.isN(o.do2) ? o.do2.toFixed(0) + (L.isN(o.do2i) ? ' / ' + o.do2i.toFixed(0) : '') : '—', 'mL/分', lvRange(o.do2i, 500, 650, 400), 'DO₂I基準 500〜600', 'do2')}
+      ${KPI('尿量', fx(o.uokg, 2), 'mL/kg/時', L.isN(o.uokg) ? (o.uokg < 0.5 ? 'warn' : 'ok') : '', '≧0.5を目標')}
+      ${KPI('Forrester', o.forrester || '—', '', o.forrester ? ({ I: 'ok', II: 'warn', III: 'warn', IV: 'danger' })[o.forrester] : '', 'CI・PAWPが必要', 'forrester')}
+      ${KPI('CS（心不全時）', o.cs ? 'CS' + o.cs : '—', '', o.cs === 3 ? 'warn' : 'info', 'SBPによる分類', 'cs')}
+    </div>`) +
+    CARD('解釈のポイント', `<ul class="ref" style="padding-left:18px;margin:0"><li>数値は単独で判断せず、意識・皮膚所見・尿量・乳酸・エコー所見と統合する。</li><li>ショックの型：循環血液量減少性（CO↓SVR↑CVP↓）／心原性（CO↓SVR↑PAWP↑）／閉塞性（CO↓CVP↑、エコーで鑑別）／血液分布異常性（CO→↑SVR↓）。</li><li>敗血症性ショックの初期目標：MAP≧65 mmHg（日本版敗血症診療ガイドライン2024）。</li></ul>`);
+  $('#h_out').innerHTML = out;
+}
+
+/* =========================================================
+   3. NIHSS（責任病変の検討つき）
+   ========================================================= */
+const NI = [
+  { k: 'n1a', t: '1a 意識水準', o: [[0, '完全覚醒'], [1, '簡単な刺激で覚醒'], [2, '繰り返し・強い刺激で覚醒'], [3, '完全に無反応（反射のみ）']] },
+  { k: 'n1b', t: '1b 意識障害（質問）', s: '今の月・年齢', o: [[0, '2問とも正答'], [1, '1問正答'], [2, '2問とも誤答']] },
+  { k: 'n1c', t: '1c 意識障害（従命）', s: '開閉眼・離握手', o: [[0, '2つとも可'], [1, '1つ可'], [2, '2つとも不可']] },
+  { k: 'n2', t: '2 最良の注視', s: '水平眼球運動', o: [[0, '正常'], [1, '部分的注視麻痺'], [2, '完全注視麻痺（共同偏視）']], side: { name: 'gazeDir', q: '眼球はどちらを向いていますか？（患者から見た方向）', opts: [['R', '右を向いている'], ['L', '左を向いている'], ['', '一定方向なし（眼筋麻痺など）']] } },
+  { k: 'n3', t: '3 視野', o: [[0, '視野欠損なし'], [1, '部分的半盲（四分盲）'], [2, '完全半盲'], [3, '両側性半盲（皮質盲含む）']], side: { name: 'visualSide', q: 'どちらの視野が欠けていますか？', opts: [['L', '左側の視野'], ['R', '右側の視野'], ['B', '両側']] } },
+  { k: 'n4', t: '4 顔面麻痺', o: [[0, '正常'], [1, '軽度（鼻唇溝の平坦化など）'], [2, '部分的（顔面下半分の完全麻痺）'], [3, '完全（上部・下部とも）']], side: { name: 'faceSide', q: '麻痺しているのはどちら側の顔ですか？', opts: [['L', '左の顔'], ['R', '右の顔'], ['B', '両側']] } },
+  { k: 'limbs' },
+  { k: 'n7', t: '7 運動失調', s: '指鼻・踵膝試験', o: [[0, 'なし'], [1, '1肢にあり'], [2, '2肢にあり'], ['UN', 'UN（切断・関節癒合）']], side: { name: 'ataxiaSide', q: '失調があるのはどちら側ですか？', opts: [['L', '左上下肢'], ['R', '右上下肢'], ['B', '両側']] }, note: '麻痺で説明できる程度の拙劣さは採点しない（麻痺に比して不釣り合いな場合のみ）' },
+  { k: 'n8', t: '8 感覚', s: 'ピンプリック', o: [[0, '正常'], [1, '軽度〜中等度の低下'], [2, '重度〜完全脱失']], side: { name: 'sensorySide', q: '感覚が低下しているのはどちら側ですか？', opts: [['L', '左半身'], ['R', '右半身'], ['B', '両側']] } },
+  { k: 'n9', t: '9 最良の言語', s: '呼称・音読・絵の説明', o: [[0, '失語なし'], [1, '軽度〜中等度の失語'], [2, '重度の失語'], [3, '無言・全失語']] },
+  { k: 'n10', t: '10 構音障害', o: [[0, '正常'], [1, '軽度〜中等度'], [2, '重度（理解不能）'], ['UN', 'UN（挿管など）']] },
+  { k: 'n11', t: '11 消去現象と注意障害', s: '半側空間無視', o: [[0, '異常なし'], [1, '1つの感覚様式で消去/不注意'], [2, '重度の半側不注意・2様式以上']], side: { name: 'neglectSide', q: '無視・消去されるのはどちら側の空間ですか？', opts: [['L', '左側の空間'], ['R', '右側の空間']] } }
+];
+const ARM = [[0, '下垂なし（10秒保持）'], [1, '10秒以内に下垂（ベッドにつかない）'], [2, '重力に抗するが10秒以内に落下'], [3, '重力に抗する動きなし'], [4, '全く動きなし'], ['UN', 'UN（切断・関節癒合）']];
+const LEG = [[0, '下垂なし（5秒保持）'], [1, '5秒以内に下垂（ベッドにつかない）'], [2, '重力に抗するが5秒以内に落下'], [3, '重力に抗する動きなし'], [4, '全く動きなし'], ['UN', 'UN（切断・関節癒合）']];
+
+Object.assign(HELP, {
+  nihss: { t: 'NIHSS（National Institutes of Health Stroke Scale）', b: '<p>0〜42点。項目の順番どおりに評価し、<b>最初の反応</b>を採点する（やり直しで良くなった反応は採点しない）。</p><p><b>5a＝左上肢、5b＝右上肢、6a＝左下肢、6b＝右下肢</b>。本ツールでは誤入力を防ぐため「患者の左／右」で明示している。</p><p>UN（評価不能：切断・関節癒合・挿管など）は合計点に含めない。</p>' },
+  loc: { t: '責任病変の考え方', b: '<p><b>① 運動・感覚の経路は交叉する</b>：大脳半球の病変では<b>反対側</b>の上下肢に麻痺・感覚障害が出る（左麻痺 → 右半球）。</p><p><b>② 共同偏視</b>：大脳半球病変では眼球は<b>病巣側</b>を向く（右半球病変 → 右を向き、左麻痺）。眼球が<b>麻痺側</b>を向くときは橋病変やけいれん発作を考える。</p><p><b>③ 失語</b>は言語優位半球（右利きの約95%、左利きでも約70%は左半球）。<b>半側空間無視</b>は主に劣位（右）半球頭頂葉。</p><p><b>④ 交叉性麻痺</b>（片側の顔面＋反対側の上下肢）は脳幹病変で、病変は顔面麻痺側。</p><p><b>⑤ 小脳</b>は同側支配：麻痺のない側の失調は同側小脳半球。</p><p><b>⑥ 血管領域</b>：MCA＝顔面・上肢優位の麻痺＋失語/無視、ACA＝下肢優位、PCA＝同名半盲、ラクナ＝皮質徴候のない純粋運動/感覚障害。</p><p>本判定は神経所見からの推定であり、確定は画像診断で行う。</p>' },
+  gcs: { t: 'GCS（Glasgow Coma Scale）', b: '<p>E（開眼）1〜4、V（言語）1〜5、M（運動）1〜6、合計3〜15。挿管中はVを「T」と記載し、合計はE+Mで併記する。8以下は気道確保を考慮する目安。</p>' },
+  jcs: { t: 'JCS（Japan Coma Scale）', b: '<p>Ⅰ（覚醒している）1・2・3、Ⅱ（刺激で覚醒）10・20・30、Ⅲ（刺激で覚醒しない）100・200・300。付加：R（不穏）、I（失禁）、A（自発性喪失）。</p>' }
+});
+
+page('nihss', 'NIHSS・神経評価', 'NIHSS採点と責任病変（大脳半球・血管領域）の検討、GCS/JCS', 'nihss', function () {
+  const rows = NI.map(it => {
+    if (it.k === 'limbs') {
+      return `<div class="ni"><div class="h">5・6 運動<small>上肢：90°（臥位45°）10秒<br>下肢：30° 5秒</small></div><div>
+        <div class="limb-grid">
+          <div class="limb R"><div class="lh"><span class="sidechip R">右</span> 5b 右上肢</div>${SEG('n5R', ARM, 'col')}</div>
+          <div class="limb L"><div class="lh"><span class="sidechip L">左</span> 5a 左上肢</div>${SEG('n5L', ARM, 'col')}</div>
+          <div class="limb R"><div class="lh"><span class="sidechip R">右</span> 6b 右下肢</div>${SEG('n6R', LEG, 'col')}</div>
+          <div class="limb L"><div class="lh"><span class="sidechip L">左</span> 6a 左下肢</div>${SEG('n6L', LEG, 'col')}</div>
+        </div><div class="tiny" style="margin-top:6px">※ 左右は<b>患者本人</b>の左右です（向かい合った検者の左右ではありません）。</div></div></div>`;
+    }
+    return `<div class="ni" id="row_${it.k}"><div class="h">${it.t}${it.s ? `<small>${it.s}</small>` : ''}</div><div>${SEG(it.k, it.o.map(x => [x[0], `<b>${x[0]}</b>${x[1]}`]))}
+      ${it.note ? `<div class="tiny" style="margin-top:4px">${it.note}</div>` : ''}
+      ${it.side ? `<div class="sidebox" id="sb_${it.k}"><div class="q">▶ ${it.side.q}</div>${SEG(it.side.name, it.side.opts, 'side')}</div>` : ''}</div></div>`;
+  }).join('');
+  const gcsE = [[4, '4 自発的に開眼'], [3, '3 呼びかけで開眼'], [2, '2 痛み刺激で開眼'], [1, '1 開眼しない']];
+  const gcsV = [[5, '5 見当識あり'], [4, '4 混乱した会話'], [3, '3 不適当な発語'], [2, '2 理解不能の音声'], [1, '1 発語なし'], ['T', 'T 挿管中']];
+  const gcsM = [[6, '6 命令に従う'], [5, '5 疼痛部位を認識'], [4, '4 逃避屈曲'], [3, '3 異常屈曲（除皮質）'], [2, '2 伸展（除脳）'], [1, '1 動かない']];
+  const jcs = [['0', '0 清明'], ['1', 'Ⅰ-1 だいたい清明だが今ひとつ'], ['2', 'Ⅰ-2 見当識障害'], ['3', 'Ⅰ-3 名前・生年月日が言えない'], ['10', 'Ⅱ-10 普通の呼びかけで開眼'], ['20', 'Ⅱ-20 大声・揺さぶりで開眼'], ['30', 'Ⅱ-30 痛み刺激でかろうじて開眼'], ['100', 'Ⅲ-100 払いのける'], ['200', 'Ⅲ-200 手足を動かす・顔をしかめる'], ['300', 'Ⅲ-300 全く反応しない']];
+  return `<div class="tabs" data-tabs="nt"><button class="on" data-tab="nt-n">NIHSS</button><button data-tab="nt-g">GCS / JCS</button></div>
+  <div class="sub on" id="nt-n"><div class="cols"><div>
+   ${CARD('NIHSS 採点', `<div class="row" style="margin-bottom:6px"><span class="muted">言語優位半球</span>${SEG('n_dom', [['L', '左（右利き・多くの左利き）'], ['R', '右']], 'side', 'L')}<span class="sp"></span><button class="btn sm" id="n_coma">1a=3（昏睡）の規定値を入力</button><button class="btn sm" id="n_zero">全項目0</button></div>${rows}`, { right: help('nihss') + ' <button class="btn sm" data-reset="nihss">クリア</button>' })}
+  </div><div class="sticky" id="n_out"></div></div></div>
+  <div class="sub" id="nt-g"><div class="cols"><div>
+   ${CARD('GCS', `<div class="ni"><div class="h">E 開眼</div>${SEG('gE', gcsE)}</div><div class="ni"><div class="h">V 言語</div>${SEG('gV', gcsV)}</div><div class="ni"><div class="h">M 運動</div>${SEG('gM', gcsM)}</div>`, { right: help('gcs') })}
+   ${CARD('JCS', SEG('jcs', jcs, 'col'), { right: help('jcs') })}
+  </div><div class="sticky" id="g2_out"></div></div></div>`;
+}, computeNIHSS);
+
+function brainSVG(r) {
+  // 放射線学的表示（CTと同じ）：向かって左＝患者の右
+  const hi = 'var(--danger)', soft = 'color-mix(in srgb,var(--danger) 22%,transparent)';
+  const X = (hemi, x) => hemi === 'R' ? x : 220 - x; // 患者右を画像左側に
+  const isH = r.hemi === 'R' || r.hemi === 'L';
+  const terr = (r.territories || []).map(t => t.t).join(' ');
+  const has = k => terr.indexOf(k) >= 0;
+  const shapes = [];
+  const hemiPath = h => h === 'R' ? 'M108 16 C58 16 22 52 22 104 C22 156 58 192 108 194 Z' : 'M112 16 C162 16 198 52 198 104 C198 156 162 192 112 194 Z';
+  ['R', 'L'].forEach(h => shapes.push(`<path d="${hemiPath(h)}" fill="${isH && r.hemi === h ? soft : 'var(--panel2)'}" stroke="var(--ink2)" stroke-width="1.5"/>`));
+  if (isH) {
+    const h = r.hemi;
+    shapes.push(`<clipPath id="cl${h}"><path d="${hemiPath(h)}"/></clipPath>`);
+    const g = [];
+    if (has('MCA')) g.push(`<ellipse cx="${X(h, 46)}" cy="104" rx="34" ry="62" fill="${hi}" opacity=".55"/>`);
+    if (has('ACA')) g.push(`<rect x="${h === 'R' ? 86 : 112}" y="16" width="22" height="110" fill="${hi}" opacity=".55"/>`);
+    if (has('PCA')) g.push(`<ellipse cx="${X(h, 82)}" cy="182" rx="34" ry="26" fill="${hi}" opacity=".55"/>`);
+    if (has('内包') || has('視床') || has('ラクナ') || has('放線冠')) g.push(`<ellipse cx="${X(h, 90)}" cy="108" rx="10" ry="20" fill="${hi}" opacity=".85"/>`);
+    shapes.push(`<g clip-path="url(#cl${h})">${g.join('')}</g>`);
+  }
+  // 後頭蓋窩
+  const bs = r.hemi === 'BS', cb = r.hemi === 'CB';
+  shapes.push(`<ellipse cx="82" cy="232" rx="22" ry="15" fill="${cb ? soft : 'var(--panel2)'}" stroke="var(--ink2)"/><ellipse cx="138" cy="232" rx="22" ry="15" fill="${cb ? soft : 'var(--panel2)'}" stroke="var(--ink2)"/><ellipse cx="110" cy="230" rx="12" ry="18" fill="${bs ? hi : 'var(--panel)'}" opacity="${bs ? .7 : 1}" stroke="var(--ink2)"/>`);
+  shapes.push(`<text x="110" y="10" font-size="9" text-anchor="middle" fill="var(--ink3)">前（顔側）</text><text x="12" y="108" font-size="13" font-weight="800" fill="#1d4ed8">R</text><text x="200" y="108" font-size="13" font-weight="800" fill="#c2410c">L</text><text x="110" y="258" font-size="9" text-anchor="middle" fill="var(--ink3)">脳幹・小脳</text>`);
+  return `<svg viewBox="0 0 220 262" width="170" role="img" aria-label="病変推定部位">${shapes.join('')}</svg>`;
+}
+
+function computeNIHSS() {
+  // サイドボックス表示制御
+  NI.forEach(it => {
+    if (!it.side) return;
+    const on = L.isN(ST[it.k]) && ST[it.k] > 0;
+    const b = $('#sb_' + it.k); if (b) b.classList.toggle('on', on);
+    if (!on && ST[it.side.name] !== undefined) { delete ST[it.side.name]; $$(`[data-seg="${it.side.name}"]`).forEach(x => x.classList.remove('on')); }
+  });
+  const s = {}; L.nihssItems.forEach(k => { s[k] = ST[k] === 'UN' ? 'UN' : (ST[k] === undefined ? undefined : +ST[k]); });
+  ['gazeDir', 'visualSide', 'faceSide', 'ataxiaSide', 'sensorySide', 'neglectSide'].forEach(k => s[k] = ST[k] || '');
+  s.dominant = ST.n_dom || 'L';
+  const tot = L.nihssTotal(s);
+  const sev = L.nihssSeverity(tot.total);
+  const r = L.nihssLocalize(s);
+  const done = 15 - tot.missing.length;
+  const lmot = (L.isN(s.n5L) ? s.n5L : 0) + (L.isN(s.n6L) ? s.n6L : 0), rmot = (L.isN(s.n5R) ? s.n5R : 0) + (L.isN(s.n6R) ? s.n6R : 0);
+  const hero = `<div class="hero ${tot.missing.length === 15 ? '' : sev.lv}"><div class="lbl">NIHSS 合計　<span class="tiny">入力 ${done}/15 項目</span></div><div class="val">${tot.total}<span style="font-size:16px"> / 42</span></div><div class="desc">${sev.t}${tot.missing.length && tot.missing.length < 15 ? '　<span class="pill warn">未入力あり</span>' : ''}</div></div>
+   <div class="kpis" style="margin-bottom:10px">${KPI('<span class="sidechip R">右</span> 上下肢', rmot, '点', rmot ? 'warn' : 'ok', '5b+6b')}${KPI('<span class="sidechip L">左</span> 上下肢', lmot, '点', lmot ? 'warn' : 'ok', '5a+6a')}</div>`;
+  const hemiLv = r.hemi ? (r.hemi === 'B' ? 'warn' : 'danger') : '';
+  const loc = `<div class="brainwrap">${brainSVG(r)}<div style="flex:1"><div class="hero ${hemiLv}" style="margin:0 0 8px;padding:10px 12px"><div class="lbl">推定される責任病変</div><div class="val" style="font-size:17px">${esc(r.label)}</div></div>
+      ${r.territories.map(t => `<div class="reason"><span class="s ${r.hemi}">領域</span><div><b>${esc(t.t)}</b><div class="tiny">${esc(t.d)}</div></div></div>`).join('')}
+      <div class="tiny">図はCTと同じ向き（向かって左＝患者の右）</div></div></div>
+    ${r.lvo ? `<div class="alert danger"><div><b>主幹動脈閉塞（LVO）を疑う所見</b>：皮質徴候を伴う重度の神経症状。発症時刻・最終健常確認時刻を確認し、脳卒中チームへ迅速に連絡。血管評価（CTA/MRA）を。</div></div>` : ''}
+    ${r.warnings.map(w => `<div class="alert warn">${esc(w)}</div>`).join('')}
+    ${r.reasons.length ? `<div style="margin-top:8px"><div class="muted" style="font-weight:700;margin-bottom:4px">判定の根拠</div>${r.reasons.map(x => `<div class="reason"><span class="s ${x.hemi}">${x.hemi === 'R' ? '右半球' : x.hemi === 'L' ? '左半球' : x.hemi === 'BS' ? '脳幹' : x.hemi === 'CB' ? '小脳' : x.hemi === 'B' ? '両側' : '参考'}</span><span>${esc(x.t)}</span></div>`).join('')}</div>` : ''}`;
+  $('#n_out').innerHTML = CARD('NIHSS 結果', hero) + CARD('責任病変の検討', loc, { right: help('loc') }) +
+    CARD('次のアクション（参考）', `<ul class="ref" style="padding-left:18px;margin:0"><li>最終健常確認時刻（LKW）の確認、血糖測定（低血糖の除外）</li><li>rt-PA静注療法：発症4.5時間以内が原則（静注血栓溶解療法適正治療指針 第三版）</li><li>機械的血栓回収療法：内頸動脈/M1閉塞、NIHSS≧6、ASPECTS≧6、発症6時間以内などで推奨（脳卒中治療ガイドライン2021［改訂2023］）。適応判断は医師が画像で行う。</li></ul>`);
+  // GCS
+  const e = ST.gE, v = ST.gV, m = ST.gM;
+  const vt = v === 'T';
+  const g = L.isN(+e) && L.isN(+m) && v !== undefined ? (vt ? (+e) + (+m) : (+e) + (+v) + (+m)) : null;
+  const jv = ST.jcs;
+  $('#g2_out').innerHTML = CARD('意識レベル', `<div class="kpis">${KPI('GCS', g == null ? '—' : vt ? g + 'T' : g, '', g == null ? '' : vt ? 'info' : g <= 8 ? 'danger' : g <= 13 ? 'warn' : 'ok', g == null ? 'E・V・Mを選択' : `E${e}V${v}M${m}`, 'gcs')}${KPI('JCS', jv == null ? '—' : jv, '', jv == null ? '' : +jv >= 100 ? 'danger' : +jv >= 10 ? 'warn' : +jv > 0 ? 'info' : 'ok', '', 'jcs')}</div>${g != null && !vt && g <= 8 ? '<div class="alert danger">GCS 8以下：気道確保・呼吸管理を考慮</div>' : ''}`);
+}
+
+/* =========================================================
+   4. 水分・栄養
+   ========================================================= */
+Object.assign(HELP, {
+  tpct: { t: '目標エネルギーを何割に設定するか', b: '<p><b>急性期早期（概ね第1〜3病日）</b>：推算式で必要量を求めた場合、過剰投与を避けるため<b>目標の70%を超えない</b>低めの投与から開始する（ESPEN ICUガイドライン 2019）。日本版重症患者の栄養療法ガイドライン（2016）も、初期1週間は消費エネルギーに見合う量を投与しないことを弱く推奨している。</p><p><b>第4病日以降</b>：耐容性（消化器症状・血糖・リフィーディング徴候）を確認しながら漸増し、<b>80〜100%</b>を目指す。</p><p><b>回復期・リハビリ期</b>：100%（筋量回復には必要に応じて増量）。</p><p><b>Refeeding症候群高リスク</b>：<b>10 kcal/kg/日</b>から開始（超高リスクは5 kcal/kg/日）し、4〜7日かけて増量。P・K・Mgをモニタリング（NICE CG32）。</p><p>※プロポフォール（1%製剤 約1.1 kcal/mL）やブドウ糖輸液も投与エネルギーに含めて評価する。</p>' },
+  dw: { t: '計算に用いる体重', b: '<p><b>自動</b>：BMI 30以上は調整体重、それ以外は実測体重。</p><p>標準体重（IBW）= 22 × 身長(m)²／調整体重 = IBW + 0.25 ×（実測体重 − IBW）。係数は0.25を使用（文献により0.33なども用いられる）。浮腫・腹水がある場合は平常時体重やIBWを用いる。</p>' },
+  hbe: { t: 'Harris-Benedictの式', b: '<p>男性：66.47 + 13.75W + 5.003H − 6.755A<br>女性：655.1 + 9.563W + 1.850H − 4.676A<br>（W：体重kg、H：身長cm、A：年齢）</p><p>必要エネルギー = 基礎エネルギー消費量（BEE）× 活動係数 × ストレス係数。重症患者では推算式の誤差が大きく、間接熱量測定が可能ならそちらを優先する。</p>' },
+  prot: { t: 'たんぱく質の目標', b: '<p>重症患者：1.2〜2.0 g/kg/日（ESPEN 2019では1.3 g/kg/日を漸増で目標）。一般入院・高齢者：1.0〜1.2 g/kg/日。保存期CKD：病期に応じて制限（腎臓病食品交換表・CKDガイドラインを参照）。透析・CRRT中は増量。</p>' },
+  insens: { t: '不感蒸泄・代謝水', b: '<p>不感蒸泄 ≒ 15 mL/kg/日、体温が37℃から1℃上昇するごとに約15%増加。代謝水 ≒ 5 mL/kg/日。</p><p>人工呼吸器で加温加湿中は呼気からの喪失が減る、発汗が多い場合は増えるなど、あくまで目安。</p>' },
+  npc: { t: 'NPC/N比', b: '<p>非たんぱくカロリー / 窒素量（たんぱく質g ÷ 6.25）。一般的に150前後、侵襲時は100前後、腎不全では300〜500程度を目安にする。</p>' }
+});
+
+page('nutri', '水分・栄養計算', '必要エネルギー・目標達成率（何割で設定するか）・投与量・水分出納', 'nutri', function () {
+  return `<div class="cols"><div>
+  ${CARD('患者情報', `<div class="grid">
+    ${SEL('u_sex', '性別', [['M', '男性'], ['F', '女性']], { v: 'M' })}${F('u_age', '年齢', '歳', { min: 15, max: 120 })}${F('u_ht', '身長', 'cm', { min: 100, max: 220 })}${F('u_wt', '体重', 'kg', { min: 20, max: 300 })}
+    ${SEL('u_basis', '計算に用いる体重', [['auto', '自動'], ['actual', '実測体重'], ['ideal', '標準体重'], ['adjusted', '調整体重']], { v: 'auto', help: 'dw' })}${F('u_temp', '体温', '℃', { min: 30, max: 43 })}</div>`, { right: '<button class="btn sm" data-reset="nutri">クリア</button>' })}
+  ${CARD('必要量の設定', `<div class="row" style="margin-bottom:10px"><span class="muted" style="font-weight:700">エネルギー算出法</span>${SEG('u_meth', [['simple', '簡易式（kcal/kg）'], ['hb', 'Harris-Benedict式']], '', 'simple')}${help('hbe')}</div>
+    <div id="u_meth_simple" class="grid">${SEL('u_kpk', '体重あたり', [['20', '20 kcal/kg'], ['25', '25 kcal/kg（重症急性期の目安）'], ['30', '30 kcal/kg（回復期の目安）'], ['35', '35 kcal/kg']], { v: '25' })}</div>
+    <div id="u_meth_hb" class="grid" style="display:none">${SEL('u_af', '活動係数', [['1.0', '1.0 寝たきり（意識低下）'], ['1.1', '1.1 寝たきり（覚醒）'], ['1.2', '1.2 ベッド上安静'], ['1.3', '1.3 ベッド外活動'], ['1.5', '1.5 軽労働']], { v: '1.2' })}
+      ${SEL('u_sf', 'ストレス係数', [['1.0', '1.0 ストレスなし'], ['1.1', '1.1 軽度（小手術）'], ['1.2', '1.2 中等度（大手術・感染症）'], ['1.3', '1.3 高度（敗血症・多発外傷）'], ['1.5', '1.5 重度（重症熱傷など）']], { v: '1.2' })}</div>
+    <hr class="s"><div class="grid g2">${SEL('u_ppk', 'たんぱく質', [['0.8', '0.8 g/kg'], ['1.0', '1.0 g/kg'], ['1.2', '1.2 g/kg'], ['1.3', '1.3 g/kg（ESPEN重症）'], ['1.5', '1.5 g/kg'], ['2.0', '2.0 g/kg']], { v: '1.2', help: 'prot' })}
+      ${SEL('u_fpk', '維持水分量', [['25', '25 mL/kg'], ['30', '30 mL/kg'], ['35', '35 mL/kg'], ['40', '40 mL/kg']], { v: '30' })}</div>`)}
+  ${CARD('目標を何割に設定するか', `<div class="range"><input type="range" id="u_pct" min="5" max="120" step="1" value="70"><div class="rv"><span id="u_pctv">70</span>%</div></div>
+    <div class="preset">${[['p1', '急性期早期 70%', 70], ['p2', '漸増期 80%', 80], ['p3', '回復期 100%', 100], ['p4', '低め開始 50%', 50]].map(x => `<button class="btn sm" data-pct="${x[2]}">${x[1]}</button>`).join('')}<button class="btn sm" id="u_rf10">Refeeding高リスク：10 kcal/kg</button><button class="btn sm" id="u_rf5">超高リスク：5 kcal/kg</button></div>
+    <div class="tiny" style="margin-top:8px">急性期早期は目標の70%以下から開始し、第4病日以降に耐容性を見て80〜100%へ漸増（ESPEN 2019・日本版重症患者の栄養療法GL 2016）。</div>
+    <label class="chk" style="margin-top:10px"><input type="checkbox" id="u_ppct"><span>たんぱく質にも同じ割合を適用する<span class="tiny">（通常は早期から目標量を目指すため未選択）</span></span></label>`, { right: help('tpct'), tag: '目標設定' })}
+  ${CARD('漸増スケジュール', `<div class="grid g3">${F('u_rs', '開始', '%', { v: 50, min: 5, max: 120 })}${F('u_re', '最終', '%', { v: 100, min: 5, max: 120 })}${F('u_rd', '日数', '日', { v: 5, min: 1, max: 14 })}</div><div id="u_ramp" style="margin-top:10px"></div>`, { tag: '計画' })}
+  ${CARD('現在の投与量（1日あたり）', `<div class="muted" style="font-weight:700">経腸栄養</div><div class="grid">${F('u_en_c', '濃度', 'kcal/mL', { v: 1.0, min: 0.3, max: 3 })}${F('u_en_r', '速度', 'mL/時', { min: 0, max: 300 })}${F('u_en_h', '投与時間', '時間/日', { v: 24, min: 0, max: 24 })}${F('u_en_p', 'たんぱく質', 'g/100kcal', { v: 4.0, min: 0, max: 15, hint: '製品表示を入力' })}${F('u_en_w', '水分含有率', '%', { v: 84, min: 0, max: 100, hint: '1.0kcal/mL製品で約84%' })}</div>
+    <hr class="s"><div class="muted" style="font-weight:700">静脈栄養・輸液</div><div class="grid">${F('u_pn_k', 'PN 総エネルギー', 'kcal', { min: 0, max: 5000 })}${F('u_pn_p', 'PN アミノ酸', 'g', { min: 0, max: 300 })}${F('u_glu_c', 'ブドウ糖濃度', '%', { min: 0, max: 70 })}${F('u_glu_v', 'ブドウ糖液 量', 'mL/日', { min: 0, max: 10000 })}${F('u_pro', 'プロポフォール1%', 'mL/時', { min: 0, max: 100, hint: '1.1 kcal/mL' })}${F('u_or_k', '経口摂取', 'kcal', { min: 0, max: 5000 })}${F('u_or_p', '経口 たんぱく質', 'g', { min: 0, max: 300 })}</div>`, { tag: '達成率の計算' })}
+  ${CARD('水分出納（IN/OUT）', `<div class="grid g2" style="gap:16px"><div><div class="muted" style="font-weight:700">IN</div><div class="grid g2">${F('u_in_iv', '輸液（総量）', 'mL', { min: 0, max: 20000 })}${F('u_in_or', '経口水分', 'mL', { min: 0, max: 10000 })}${F('u_in_fl', 'フラッシュ・薬液', 'mL', { min: 0, max: 5000 })}</div><div class="tiny">経腸栄養の水分・代謝水は自動加算</div></div>
+    <div><div class="muted" style="font-weight:700">OUT</div><div class="grid g2">${F('u_out_u', '尿量', 'mL', { min: 0, max: 20000 })}${F('u_out_d', 'ドレーン・胃管', 'mL', { min: 0, max: 10000 })}${F('u_out_s', '便', 'mL', { min: 0, max: 5000 })}${F('u_out_o', 'その他（出血等）', 'mL', { min: 0, max: 20000 })}</div><div class="tiny">不感蒸泄は体温から自動加算</div></div></div>`, { right: help('insens') })}
+  ${CARD('Refeeding症候群リスク（NICE基準）', `<div class="muted" style="margin-bottom:6px">以下の<b>1項目以上</b>：</div><div class="chks">${CHK('rf_bmi16', 'BMI 16未満')}${CHK('rf_l15', '3〜6か月で15%以上の意図しない体重減少')}${CHK('rf_n10', '10日以上ほとんど摂取なし')}${CHK('rf_el', '栄養開始前から低K・低P・低Mg')}</div>
+    <div class="muted" style="margin:10px 0 6px">または以下の<b>2項目以上</b>：</div><div class="chks">${CHK('rf_bmi185', 'BMI 18.5未満')}${CHK('rf_l10', '3〜6か月で10%以上の体重減少')}${CHK('rf_n5', '5日以上ほとんど摂取なし')}${CHK('rf_alc', 'アルコール多飲・インスリン/化学療法/制酸剤/利尿薬の使用歴')}</div>
+    <div class="muted" style="margin:10px 0 6px">超高リスク：</div><div class="chks">${CHK('rf_bmi14', 'BMI 14未満')}${CHK('rf_n15', '15日以上ほとんど摂取なし')}</div><div id="rf_out" style="margin-top:10px"></div>`)}
+  </div><div class="sticky" id="u_out"></div></div>`;
+}, computeNutri);
+
+function computeNutri() {
+  validate($('#p-nutri'));
+  $('#u_meth_simple').style.display = ST.u_meth === 'hb' ? 'none' : '';
+  $('#u_meth_hb').style.display = ST.u_meth === 'hb' ? '' : 'none';
+  $('#u_pctv').textContent = $('#u_pct').value;
+  $$('#p-nutri .chk').forEach(c => c.classList.toggle('on', $('input', c).checked));
+  const p = { sex: $('#u_sex').value, age: val('u_age'), ht: val('u_ht'), wt: val('u_wt'), basis: $('#u_basis').value, method: ST.u_meth, kcalPerKg: +$('#u_kpk').value, af: +$('#u_af').value, sf: +$('#u_sf').value, targetPct: +$('#u_pct').value, proteinPerKg: +$('#u_ppk').value, fluidPerKg: +$('#u_fpk').value, proteinFollowPct: chk('u_ppct') };
+  const o = L.nutri(p);
+  // 投与量
+  const enC = val('u_en_c'), enR = val('u_en_r'), enH = val('u_en_h');
+  const enVol = L.isN(enR) && L.isN(enH) ? enR * enH : 0;
+  const enK = L.isN(enC) ? enVol * enC : 0;
+  const enP = enK * (val('u_en_p') || 0) / 100;
+  const enW = enVol * (val('u_en_w') || 0) / 100;
+  const gluG = (val('u_glu_c') || 0) / 100 * (val('u_glu_v') || 0);
+  const proK = (val('u_pro') || 0) * 24 * 1.1;
+  const items = [
+    { name: '経腸栄養', kcal: enK, protein: enP, water: enW },
+    { name: 'PN', kcal: val('u_pn_k') || 0, protein: val('u_pn_p') || 0 },
+    { name: 'ブドウ糖', kcal: gluG * 4, glucoseG: gluG },
+    { name: 'プロポフォール', kcal: proK },
+    { name: '経口', kcal: val('u_or_k') || 0, protein: val('u_or_p') || 0 }
+  ];
+  const it = L.intake(items);
+  // 水分出納
+  const ins = L.insensible(p.wt, val('u_temp'));
+  const inSum = (val('u_in_iv') || 0) + (val('u_in_or') || 0) + (val('u_in_fl') || 0) + enW + (ins ? ins.metabolic : 0);
+  const outSum = (val('u_out_u') || 0) + (val('u_out_d') || 0) + (val('u_out_s') || 0) + (val('u_out_o') || 0) + (ins ? ins.insensible : 0);
+  const anyIO = ['u_in_iv', 'u_in_or', 'u_in_fl', 'u_out_u', 'u_out_d', 'u_out_s', 'u_out_o'].some(k => val(k) != null) || enW > 0;
+  // Refeeding
+  const bmi = o.bmi;
+  const rf = L.refeeding({ bmi16: chk('rf_bmi16') || (L.isN(bmi) && bmi < 16), loss15: chk('rf_l15'), noIntake10: chk('rf_n10'), lowElectrolytes: chk('rf_el'), bmi185: chk('rf_bmi185') || (L.isN(bmi) && bmi < 18.5), loss10: chk('rf_l10'), noIntake5: chk('rf_n5'), alcoholDrugs: chk('rf_alc'), bmi14: chk('rf_bmi14') || (L.isN(bmi) && bmi < 14), noIntake15: chk('rf_n15') });
+  $('#rf_out').innerHTML = rf.high ? `<div class="alert danger"><div><b>Refeeding症候群 ${rf.extreme ? '超高' : '高'}リスク</b>：${rf.extreme ? '5' : '10'} kcal/kg/日から開始し、4〜7日かけて漸増。開始前から P・K・Mg を補正・モニタリングし、ビタミンB₁を投与（NICE CG32）。${L.isN(bmi) && bmi < 18.5 ? '<br><span class="tiny">BMIから自動判定した項目を含みます</span>' : ''}</div></div>` : `<div class="alert ok">現時点の入力ではRefeeding高リスク基準に該当しません。</div>`;
+  // ramp
+  if (L.isN(o.fullKcal)) {
+    const rows = L.ramp(o.fullKcal, val('u_rs') || 50, val('u_re') || 100, val('u_rd') || 5);
+    $('#u_ramp').innerHTML = `<div class="tw"><table class="t"><thead><tr><th>日</th>${rows.map(r => `<th>${r.day}日目</th>`).join('')}</tr></thead><tbody><tr><td>割合</td>${rows.map(r => `<td>${r.pct.toFixed(0)}%</td>`).join('')}</tr><tr><td>kcal</td>${rows.map(r => `<td>${r.kcal.toFixed(0)}</td>`).join('')}</tr>${enC ? `<tr><td>EN速度<span class="tiny">(24h)</span></td>${rows.map(r => `<td>${(r.kcal / enC / 24).toFixed(0)}<span class="tiny">mL/h</span></td>`).join('')}</tr>` : ''}</tbody></table></div>`;
+  } else $('#u_ramp').innerHTML = '<div class="muted">身長・体重を入力すると表示します</div>';
+
+  if (!L.isN(o.bmi)) { $('#u_out').innerHTML = CARD('結果', '<div class="hero"><div class="val" style="font-size:20px;color:var(--ink3)">身長・体重を入力</div></div>'); return; }
+  if (!L.isN(o.fullKcal)) { $('#u_out').innerHTML = CARD('結果', '<div class="hero"><div class="val" style="font-size:20px;color:var(--ink3)">年齢を入力してください</div><div class="desc">Harris-Benedict式には年齢が必要です。</div></div>'); return; }
+  const bmiLv = o.bmi < 18.5 ? 'warn' : o.bmi >= 30 ? 'warn' : o.bmi >= 25 ? 'info' : 'ok';
+  const basisJ = { actual: '実測体重', ideal: '標準体重', adjusted: '調整体重' }[o.basisUsed];
+  const kPct = o.targetKcal ? it.kcal / o.targetKcal * 100 : null, kFull = o.fullKcal ? it.kcal / o.fullKcal * 100 : null;
+  const pPct = o.targetProtein ? it.protein / o.targetProtein * 100 : null;
+  const bar = (pct, mark) => `<div class="bar ${pct > 110 ? 'over' : ''}"><i style="width:${Math.min(100, pct || 0)}%"></i>${mark ? `<span class="mk" style="left:${Math.min(100, mark)}%"></span>` : ''}</div>`;
+  const kcalPerKgNow = o.targetKcal / o.dw;
+  const out = `<div class="hero info"><div class="lbl">目標エネルギー（全量の${o.targetPct}%）</div><div class="val">${o.targetKcal.toFixed(0)}<span style="font-size:16px"> kcal/日</span></div><div class="desc">全量 ${o.fullKcal.toFixed(0)} kcal（${(o.fullKcal / o.dw).toFixed(1)} kcal/kg）→ 目標 ${kcalPerKgNow.toFixed(1)} kcal/kg・${basisJ} ${o.dw.toFixed(1)} kg で計算</div></div>
+   <div class="kpis">${KPI('BMI', o.bmi.toFixed(1), '', bmiLv, o.bmi < 18.5 ? '低体重' : o.bmi >= 25 ? '肥満' : '普通体重')}${KPI('標準体重', o.ibw.toFixed(1), 'kg', '', 'BMI22')}${KPI('調整体重', o.adjbw.toFixed(1), 'kg', '', '')}${o.bee ? KPI('BEE', o.bee.toFixed(0), 'kcal', '', 'H-B式') : ''}
+   ${KPI('たんぱく質', o.targetProtein.toFixed(0), 'g/日', 'info', p.proteinPerKg + ' g/kg' + (p.proteinFollowPct ? '×' + o.targetPct + '%' : ''))}${KPI('維持水分量', o.fluid.toFixed(0), 'mL/日', 'info', p.fluidPerKg + ' mL/kg')}${KPI('Holliday-Segar', o.holliday.toFixed(0), 'mL/日', '', '4-2-1則（参考）')}</div>`;
+  const hasIntake = it.kcal > 0 || it.protein > 0;
+  const ach = hasIntake ? `<div style="display:grid;gap:12px">
+     <div><div class="row"><b>エネルギー</b><span class="sp"></span><span class="num">${it.kcal.toFixed(0)} / ${o.targetKcal.toFixed(0)} kcal</span><span class="pill ${kPct < 80 ? 'warn' : kPct > 110 ? 'danger' : 'ok'}">${kPct.toFixed(0)}%</span></div>${bar(kPct)}<div class="tiny">全量に対しては ${kFull.toFixed(0)}%</div></div>
+     <div><div class="row"><b>たんぱく質</b><span class="sp"></span><span class="num">${it.protein.toFixed(1)} / ${o.targetProtein.toFixed(0)} g</span><span class="pill ${pPct < 80 ? 'warn' : 'ok'}">${pPct.toFixed(0)}%</span></div>${bar(pPct)}<div class="tiny">${(it.protein / o.dw).toFixed(2)} g/kg/日</div></div>
+     <table class="t"><tbody>${items.filter(x => x.kcal > 0 || x.protein > 0).map(x => `<tr><td>${x.name}</td><td>${x.kcal.toFixed(0)} kcal</td><td>${(x.protein || 0).toFixed(1)} g</td></tr>`).join('')}</tbody></table>
+     ${it.npcn ? `<div class="tiny">NPC/N比 ${it.npcn.toFixed(0)} ${help('npc')}</div>` : ''}
+     ${gluG > 0 && L.isN(o.dw) ? `<div class="tiny">ブドウ糖投与速度 ${(gluG * 1000 / o.dw / 1440).toFixed(2)} mg/kg/分（目安 ≦4〜5）</div>` : ''}
+     ${kPct > 110 ? '<div class="alert warn">設定した目標を超えています。急性期の過剰投与（overfeeding）に注意。</div>' : ''}${proK > 0 ? `<div class="alert info">プロポフォール由来 ${proK.toFixed(0)} kcal/日（脂質）を含みます。</div>` : ''}</div>` : '<div class="muted">「現在の投与量」を入力すると達成率を表示します。</div>';
+  const io = anyIO ? `<div class="kpis">${KPI('IN', inSum.toFixed(0), 'mL', '', '代謝水 ' + (ins ? ins.metabolic.toFixed(0) : 0) + ' mL含む')}${KPI('OUT', outSum.toFixed(0), 'mL', '', '不感蒸泄 ' + (ins ? ins.insensible.toFixed(0) : 0) + ' mL含む')}${KPI('バランス', (inSum - outSum > 0 ? '+' : '') + (inSum - outSum).toFixed(0), 'mL', Math.abs(inSum - outSum) > 1000 ? 'warn' : 'ok')}</div>${ins && ins.feverAdd > 0 ? `<div class="tiny" style="margin-top:6px">発熱による不感蒸泄の増加 +${ins.feverAdd.toFixed(0)} mL</div>` : ''}` : '<div class="muted">IN/OUTを入力するとバランスを計算します。</div>';
+  $('#u_out').innerHTML = CARD('必要量', out) + CARD('目標達成率', ach) + CARD('水分出納（24時間）', io, { right: help('insens') });
+}
+
+/* =========================================================
+   5. SOFA・敗血症
+   ========================================================= */
+Object.assign(HELP, {
+  sofa: { t: 'SOFAスコア', b: '<p>6臓器（呼吸・凝固・肝・循環・中枢神経・腎）を各0〜4点で評価（Vincent JL, 1996）。Sepsis-3および日本版敗血症診療ガイドライン2024（J-SSCG 2024）では、<b>感染症が疑われ、SOFAがベースラインから2点以上急上昇</b>した場合を敗血症とする。</p><p>既知の臓器障害がなければベースラインは0とみなす。</p><p>※2025年に改訂版のSOFA-2（JAMA 2025）が発表されたが、閾値や変数が異なる。本ツールは現行の敗血症定義で用いられる従来のSOFAを採用している。</p>' },
+  qsofa: { t: 'qSOFA', b: '<p>呼吸数≧22回/分、意識変容（GCS<15）、収縮期血圧≦100 mmHg の3項目。2項目以上で敗血症を疑い、臓器障害の評価（SOFA）を行う。感度が低いため単独のスクリーニングには用いない（SSCG 2021はqSOFA単独でのスクリーニングを推奨していない）。</p>' },
+  sirs: { t: 'SIRS', b: '<p>体温>38℃または<36℃、心拍数>90回/分、呼吸数>20回/分またはPaCO₂<32 mmHg、白血球>12,000/μLまたは<4,000/μLまたは未熟顆粒球>10%。2項目以上でSIRS。現在の敗血症定義には用いないが、感染症の拾い上げに有用。</p>' },
+  shock: { t: '敗血症性ショック', b: '<p>敗血症のうち、<b>十分な輸液負荷にもかかわらず平均血圧65 mmHg以上を維持するために血管収縮薬を必要とし、かつ血清乳酸値が2 mmol/L（18 mg/dL）を超える</b>もの（Sepsis-3、J-SSCG 2024）。</p>' },
+  dose: { t: '持続投与量の換算', b: '<p>γ（μg/kg/分）=（薬剤量mg × 1000 ÷ 総量mL）× 流量mL/時 ÷ 60 ÷ 体重kg</p><p>例：ノルアドレナリン 5 mg/50 mL、3 mL/時、50 kg → 0.10 μg/kg/分。</p>' }
+});
+
+page('sepsis', 'SOFA・敗血症評価', 'SOFA・qSOFA・SIRS・敗血症/敗血症性ショックの判定、昇圧薬γ計算', 'sepsis', function () {
+  return `<div class="cols"><div>
+  ${CARD('SOFA（6臓器）', `<div class="muted" style="font-weight:700">呼吸</div><div class="grid">${F('s_po2', 'PaO₂', 'mmHg', { min: 10, max: 700 })}${F('s_fio2', 'FiO₂', '%', { min: 21, max: 100 })}${F('s_pf', 'P/F比（直接入力）', '', { min: 10, max: 700, hint: 'PaO₂・FiO₂から自動計算も可' })}</div>${CHK('s_resp', '人工呼吸（侵襲的・非侵襲的）による呼吸補助あり')}
+    <hr class="s"><div class="grid">
+      <div class="fld"><label for="s_plt">血小板</label><div class="in"><input id="s_plt" type="number" step="any" data-min="0" data-max="2000"><select id="s_pltu" style="width:auto;border-left:1px solid var(--line);background:var(--panel2);font-size:12px"><option value="4">万/μL</option><option value="3">千/μL</option></select></div></div>
+      ${F('s_bil', '総ビリルビン', 'mg/dL', { min: 0, max: 50 })}${F('s_gcs', 'GCS', '点', { min: 3, max: 15, hint: '鎮静前の値で評価' })}${F('s_cr', 'クレアチニン', 'mg/dL', { min: 0.1, max: 20 })}${F('s_uo', '尿量', 'mL/日', { min: 0, max: 10000 })}</div>
+    <hr class="s"><div class="muted" style="font-weight:700">循環</div><div class="grid">${F('s_map', 'MAP', 'mmHg', { min: 20, max: 200 })}${F('s_doa', 'ドパミン', 'μg/kg/分', { min: 0, max: 30 })}${F('s_dob', 'ドブタミン', 'μg/kg/分', { min: 0, max: 30 })}${F('s_ne', 'ノルアドレナリン', 'μg/kg/分', { min: 0, max: 5 })}${F('s_epi', 'アドレナリン', 'μg/kg/分', { min: 0, max: 5 })}</div><div class="tiny">カテコラミンは1時間以上投与しているもの</div>
+    <hr class="s"><div class="grid g2">${F('s_base', 'ベースラインSOFA', '点', { v: 0, min: 0, max: 24, hint: '既知の臓器障害がなければ0' })}<div style="align-self:end">${CHK('s_inf', '感染症が疑われる（確定または疑い）')}</div></div>`, { right: help('sofa') + ' <button class="btn sm" data-reset="sepsis">クリア</button>' })}
+  ${CARD('qSOFA・SIRS', `<div class="grid">${F('s_rr', '呼吸数', '回/分', { min: 0, max: 80 })}${F('s_sbp', '収縮期血圧', 'mmHg', { min: 20, max: 300 })}${F('s_hr', '心拍数', '回/分', { min: 20, max: 250 })}${F('s_temp', '体温', '℃', { min: 30, max: 43 })}${F('s_pco2', 'PaCO₂', 'mmHg', { min: 5, max: 150 })}${F('s_wbc', '白血球', '/μL', { min: 0, max: 200000, hint: '例 12000' })}</div>
+    <div class="chks" style="margin-top:10px">${CHK('s_ment', '意識変容（GCS<15）')}${CHK('s_band', '未熟顆粒球（桿状核球）>10%')}</div>`, { right: help('qsofa') + help('sirs') })}
+  ${CARD('敗血症性ショックの判定', `<div class="chks" style="grid-template-columns:1fr">${CHK('s_fluid', '十分な輸液負荷を行った')}${CHK('s_vaso', 'MAP≧65 mmHgの維持に血管収縮薬が必要')}</div><div class="grid" style="margin-top:10px">${F('s_lac', '乳酸', 'mmol/L', { min: 0, max: 30, hint: 'mg/dL ÷ 9 ≒ mmol/L' })}</div>`, { right: help('shock') })}
+  ${CARD('昇圧薬・強心薬 γ計算', `<div class="grid">${SEL('d_drug', '薬剤', [['ne', 'ノルアドレナリン'], ['epi', 'アドレナリン'], ['doa', 'ドパミン'], ['dob', 'ドブタミン']], { v: 'ne' })}${F('d_mg', '薬剤量', 'mg', { min: 0, max: 1000 })}${F('d_ml', '総量', 'mL', { min: 1, max: 1000 })}${F('d_wt', '体重', 'kg', { min: 1, max: 300 })}${F('d_rate', '流量', 'mL/時', { min: 0, max: 200 })}${F('d_target', '目標γ（逆算）', 'μg/kg/分', { min: 0, max: 30 })}</div><div id="d_out" style="margin-top:10px"></div>`, { right: help('dose') })}
+  </div><div class="sticky" id="s_out"></div></div>`;
+}, computeSepsis);
+
+function computeSepsis() {
+  validate($('#p-sepsis'));
+  $$('#p-sepsis .chk').forEach(c => c.classList.toggle('on', $('input', c).checked));
+  const po2 = val('s_po2'), fi = val('s_fio2');
+  let pf = val('s_pf'); if (pf == null && L.isN(po2) && L.isN(fi) && fi > 0) pf = po2 / (fi / 100);
+  let plt = val('s_plt'); if (L.isN(plt)) plt = $('#s_pltu').value === '4' ? plt * 10 : plt;
+  const gcs = val('s_gcs');
+  const p = { pf, respSupport: chk('s_resp'), plt, bil: val('s_bil'), map: val('s_map'), doa: val('s_doa'), dob: val('s_dob'), ne: val('s_ne'), epi: val('s_epi'), gcs, cr: val('s_cr'), uo: val('s_uo') };
+  const o = L.sofa(p);
+  const base = val('s_base') || 0, delta = o.total - base;
+  const inf = chk('s_inf');
+  const ment = chk('s_ment') || (L.isN(gcs) && gcs < 15);
+  const q = L.qsofa(val('s_rr'), val('s_sbp'), ment);
+  const sr = L.sirs({ temp: val('s_temp'), hr: val('s_hr'), rr: val('s_rr'), pco2: val('s_pco2'), wbc: val('s_wbc'), bands: chk('s_band') });
+  const lac = val('s_lac');
+  const vasoOn = chk('s_vaso') || ((p.ne || 0) + (p.epi || 0) + (p.doa || 0) > 0);
+  const sepsis = inf && delta >= 2;
+  const shock = sepsis && vasoOn && L.isN(lac) && lac > 2 && chk('s_fluid');
+  const nIn = 6 - o.missing.length;
+  let hero;
+  if (shock) hero = `<div class="hero danger"><div class="lbl">判定</div><div class="val">敗血症性ショック</div><div class="desc">感染症＋ΔSOFA ${delta}点、輸液後も血管収縮薬が必要、乳酸 ${lac} mmol/L &gt; 2</div></div>`;
+  else if (sepsis) hero = `<div class="hero danger"><div class="lbl">判定</div><div class="val">敗血症</div><div class="desc">感染症の疑い＋SOFAがベースラインから ${delta} 点上昇（≧2）</div></div>`;
+  else if (inf && nIn > 0) hero = `<div class="hero ${delta >= 1 ? 'warn' : 'ok'}"><div class="lbl">判定</div><div class="val" style="font-size:22px">現時点で敗血症の基準を満たさない</div><div class="desc">ΔSOFA ${delta}点（≧2で敗血症）。未入力の臓器：${o.missing.join('・') || 'なし'}</div></div>`;
+  else hero = `<div class="hero"><div class="lbl">判定</div><div class="val" style="font-size:19px;color:var(--ink3)">${nIn ? '「感染症が疑われる」にチェックすると敗血症を判定' : 'SOFAの各項目を入力'}</div></div>`;
+  const organs = [['resp', '呼吸'], ['coag', '凝固'], ['liver', '肝'], ['cv', '循環'], ['cns', '中枢神経'], ['renal', '腎']];
+  const og = `<div style="display:grid;gap:7px">${organs.map(x => { const v = o.parts[x[0]]; const c = v == null ? 'var(--line2)' : v >= 3 ? 'var(--danger)' : v >= 2 ? 'var(--warn)' : v >= 1 ? 'var(--info)' : 'var(--ok)'; return `<div style="display:grid;grid-template-columns:70px 1fr 34px;gap:8px;align-items:center;font-size:13px"><b>${x[1]}</b><div style="display:flex;gap:3px">${[1, 2, 3, 4].map(i => `<span style="flex:1;height:12px;border-radius:3px;background:${v != null && v >= i ? c : 'var(--line)'}"></span>`).join('')}</div><span class="num" style="text-align:right;font-weight:800;color:${c}">${v == null ? '—' : v}</span></div>`; }).join('')}</div>`;
+  const out = CARD('判定', hero + `<div class="kpis">${KPI('SOFA', nIn ? o.total : '—', '点', o.total >= 2 ? 'warn' : 'ok', `入力 ${nIn}/6 臓器`, 'sofa')}${KPI('ΔSOFA', nIn ? (delta >= 0 ? '+' : '') + delta : '—', '', delta >= 2 ? 'danger' : 'ok', 'ベースライン ' + base)}${KPI('qSOFA', q.score, '/3', q.score >= 2 ? 'danger' : q.score ? 'warn' : 'ok', q.items.join('・') || '該当なし', 'qsofa')}${KPI('SIRS', sr.score, '/4', sr.score >= 2 ? 'warn' : 'ok', sr.items.join('・') || '該当なし', 'sirs')}${KPI('P/F比', fx(pf), '', pf == null ? '' : pf < 200 ? 'danger' : pf < 300 ? 'warn' : 'ok', pf != null && val('s_pf') == null ? '自動計算' : '')}${KPI('乳酸', lac == null ? '—' : lac, 'mmol/L', lac == null ? '' : lac > 4 ? 'danger' : lac > 2 ? 'warn' : 'ok')}</div>
+    ${q.score >= 2 && !sepsis ? '<div class="alert warn">qSOFA 2点以上：敗血症を疑い、SOFAによる臓器障害の評価・血液培養・乳酸測定を。</div>' : ''}
+    ${pf != null && pf < 200 && !p.respSupport ? '<div class="alert info">P/F <200 でも呼吸補助がない場合、呼吸は2点で評価されます。</div>' : ''}`) +
+    CARD('臓器別スコア', og) +
+    CARD('初期対応のポイント（J-SSCG 2024 / SSCG 2021）', `<ul class="ref" style="padding-left:18px;margin:0"><li>敗血症を認識したら血液培養2セット採取後、可及的速やかに抗菌薬投与（ショックでは1時間以内を目標）</li><li>乳酸値の測定と再評価</li><li>低血圧・乳酸高値では晶質液による初期輸液（30 mL/kgが目安、反応を評価しながら）</li><li>MAP≧65 mmHgを目標に、第一選択の血管収縮薬はノルアドレナリン</li><li>感染巣の検索と早期のソースコントロール</li></ul>`);
+  $('#s_out').innerHTML = out;
+  // γ計算
+  const g = L.dose(val('d_mg'), val('d_ml'), val('d_rate'), val('d_wt'));
+  const rr = L.rateFromDose(val('d_mg'), val('d_ml'), val('d_target'), val('d_wt'));
+  const conc = L.isN(val('d_mg')) && L.isN(val('d_ml')) && val('d_ml') > 0 ? val('d_mg') * 1000 / val('d_ml') : null;
+  $('#d_out').innerHTML = `<div class="kpis">${KPI('濃度', fx(conc, 1), 'μg/mL')}${KPI('投与量', g == null ? '—' : g.toFixed(g < 1 ? 3 : 2), 'μg/kg/分', 'info')}${KPI('目標γの流量', fx(rr, 1), 'mL/時', '')}</div>${g != null ? `<button class="btn sm pri" id="d_apply" style="margin-top:8px">この投与量をSOFAの循環に反映</button>` : ''}`;
+}
+
+/* =========================================================
+   6. 災害トリアージタグ練習（START法）
+   ========================================================= */
+const TR = { c: null, keep: 3, t0: 0, stats: { n: 0, ok: 0, time: 0, miss: {} }, judged: false, cat: null, hist: [] };
+const COLORS = ['black', 'red', 'yellow', 'green'];
+const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = a => a[rnd(0, a.length - 1)];
+
+function genCase() {
+  const r = Math.random();
+  const target = r < 0.22 ? 'green' : r < 0.47 ? 'yellow' : r < 0.86 ? 'red' : 'black';
+  const who = pick(['20代', '30代', '40代', '50代', '60代', '70代', '80代']) + pick(['男性', '女性']);
+  const c = { walk: false, breathing: true, airwayBreath: null, rr: rnd(14, 26), radial: true, crt: pick([1, 1.5, 2]), obeys: true, who, sub: '' };
+  let story = '';
+  if (target === 'green') {
+    c.walk = true;
+    story = pick(['前額部から出血しているが、自力で歩いて指定の集合場所まで来た。', '左前腕の変形を右手で押さえながら、歩いて救護所に来た。', '「胸が少し痛い」と訴えるが、自分で歩いて移動できる。', '顔面に多数の擦過傷があり泣いているが、呼びかけに応じて歩いて移動した。', '足を引きずりながらも、自力で歩いて安全な場所へ移動できた。']);
+    if (Math.random() < 0.4) { c.rr = rnd(30, 34); c.sub = 'green-trap'; }
+  } else if (target === 'yellow') {
+    story = pick(['右大腿部に変形と腫脹があり、立ち上がれない。', '腰背部の痛みを強く訴え、歩くことができない。', '下腿の開放創から出血していたが圧迫で止血。痛みで歩行不能。', '両足関節が腫れて立てない。会話は明瞭。', '倒れた家具に足を挟まれていた。救出後も歩けない。']);
+    c.rr = rnd(12, 28); c.crt = pick([1, 1.5, 2]);
+  } else if (target === 'red') {
+    const t = pick(['airway', 'rrHigh', 'rrLow', 'radial', 'crt', 'obeys']); c.sub = t;
+    if (t === 'airway') { c.breathing = false; c.airwayBreath = true; story = '倒れて動かない。呼吸が確認できないため、用手的に気道確保を行った。'; }
+    if (t === 'rrHigh') { c.rr = rnd(30, 44); story = pick(['胸部を強く打ち、苦しそうに浅く速い呼吸をしている。', '瓦礫の下から救出された。息苦しさを訴え座り込んでいる。']); }
+    if (t === 'rrLow') { c.rr = rnd(5, 9); story = '仰向けに倒れている。ゆっくりとした呼吸をしている。'; }
+    if (t === 'radial') { c.radial = false; c.crt = pick([3, 3.5, 4]); story = pick(['腹部に打撲痕があり、顔面蒼白で冷汗をかいている。', '骨盤部の痛みを訴え、皮膚が冷たく湿っている。']); }
+    if (t === 'crt') { c.crt = pick([2.5, 3, 4]); story = '大腿部から出血が続いている。皮膚は蒼白。'; }
+    if (t === 'obeys') { c.obeys = false; story = pick(['頭部に打撲痕がある。呼びかけに開眼するが、「手を握って」という指示に従えない。', '倒れていて、意味のない言葉を発している。簡単な指示に応じない。']); }
+  } else {
+    c.breathing = false; c.airwayBreath = false;
+    story = pick(['瓦礫の下に横たわっている。呼吸が確認できないため、用手的に気道確保を行った。', '倒壊した家屋の前で倒れている。反応がなく、呼吸もない。気道確保を行った。']);
+  }
+  c.story = story;
+  c.ans = L.start(c);
+  return c;
+}
+
+function caseHTML(c) {
+  const chips = [];
+  chips.push(`<span>歩行：<b>${c.walk ? '可能' : '不可'}</b></span>`);
+  if (!c.walk || c.sub === 'green-trap') {
+    if (!c.breathing) chips.push(`<span>自発呼吸：<b>なし</b></span><span>気道確保後：<b>${c.airwayBreath ? '呼吸が出現した' : '呼吸は出現しない'}</b></span>`);
+    else {
+      chips.push(`<span>呼吸数：<b>${c.rr}</b> 回/分</span>`);
+      if (!c.walk) chips.push(`<span>橈骨動脈：<b>${c.radial ? '触知可' : '触知不可'}</b></span><span>CRT：<b>${c.crt}</b> 秒</span><span>指示：<b>${c.obeys ? '従える' : '従えない'}</b></span>`);
+    }
+  }
+  return `<div class="case"><div class="pill info" style="margin-bottom:6px">傷病者 No.${TR.stats.n + 1}　${c.who}</div><div>${esc(c.story)}</div><div class="vit">${chips.join('')}</div></div>`;
+}
+
+const TIP = {
+  'green-trap': '歩行可能な傷病者は、呼吸数など他の所見にかかわらずSTART法ではまず「緑」。ただし二次トリアージ・継続観察で再評価する。',
+  airway: '自発呼吸がない場合はまず気道確保。呼吸が出現すれば「赤」、出現しなければ「黒」。',
+  rrHigh: '呼吸数30回/分以上は「赤」。',
+  rrLow: '呼吸数10回/分未満は「赤」。',
+  radial: '橈骨動脈が触知できない（またはCRT>2秒）は循環不全として「赤」。',
+  crt: 'CRT（毛細血管再充満時間）が2秒を超えれば「赤」。',
+  obeys: '簡単な指示に従えない意識障害は「赤」。'
+};
+
+page('triage', '災害トリアージ練習', 'START法による一次トリアージとトリアージタグの切り取り練習', 'triage', function () {
+  const tag = `<div class="ttag" id="ttag"><div class="hole"></div><div class="ttl">トリアージ・タグ</div>
+    <div class="fx"><div>No.</div><div><input id="tt_no"></div></div>
+    <div class="fx"><div>氏名</div><div><input id="tt_name" placeholder="不明なら空欄"></div></div>
+    <div class="fx"><div>年齢・性別</div><div><input id="tt_age"></div></div>
+    <div class="fx"><div>実施日時</div><div style="display:flex;gap:4px"><input id="tt_time"><button class="btn sm" id="tt_now" style="padding:0 6px;font-size:11px">今</button></div></div>
+    <div class="fx"><div>実施者</div><div><input id="tt_who"></div></div>
+    <div class="fx"><div>実施場所</div><div><input id="tt_where"></div></div>
+    <div class="fx"><div>症状・傷病名</div><div><input id="tt_sym"></div></div>
+    <div class="cats" id="tt_cats">${['0', 'I', 'II', 'III'].map(x => `<span data-cat="${x}">${x}</span>`).join('')}</div>
+    ${COLORS.map((c, i) => `<div class="strip ${c}" data-strip="${i}">${{ black: '0', red: 'I', yellow: 'II', green: 'III' }[c]}<span class="ins">ここを残す</span></div>`).join('')}</div>`;
+  const flow = `<div class="flow" style="max-width:560px">
+    <div class="fs"><span class="q">① 歩行可能か</span><span class="a">はい →</span><span class="colorchip green">緑 III</span></div>
+    <div class="fs"><span class="q">② 自発呼吸はあるか（なければ気道確保）</span><span class="a">気道確保しても無呼吸 →</span><span class="colorchip black">黒 0</span></div>
+    <div class="fs"><span class="q">　 気道確保で呼吸が出現</span><span class="a">→</span><span class="colorchip red">赤 I</span></div>
+    <div class="fs"><span class="q">③ 呼吸数 30回/分以上 または 10回/分未満</span><span class="a">はい →</span><span class="colorchip red">赤 I</span></div>
+    <div class="fs"><span class="q">④ 橈骨動脈触知不可 または CRT 2秒超</span><span class="a">はい →</span><span class="colorchip red">赤 I</span></div>
+    <div class="fs"><span class="q">⑤ 簡単な指示に従えない</span><span class="a">はい →</span><span class="colorchip red">赤 I</span></div>
+    <div class="fs end"><span class="q">上記すべて該当しない</span><span class="a">→</span><span class="colorchip yellow">黄 II</span></div></div>
+    <div class="tiny" style="margin-top:10px">START法：1人あたり30秒程度で判定する一次トリアージ。処置は気道確保と圧迫止血に限る。トリアージは繰り返し行い、状態変化で区分を変更する。</div>`;
+  const pts = `<ul class="ref" style="padding-left:18px;margin:0;font-size:13.5px;line-height:1.9">
+    <li>区分：<span class="colorchip black">黒 0</span> 死亡・救命困難（不処置群）／<span class="colorchip red">赤 I</span> 最優先治療群／<span class="colorchip yellow">黄 II</span> 待機的治療群／<span class="colorchip green">緑 III</span> 保留群</li>
+    <li>タグは下端の色を残すように切り取る（例：赤なら黄と緑の部分を切り離す）。</li>
+    <li>装着は原則<b>右手首</b>→ 不可なら左手首 → 右足首 → 左足首 → 首の順（衣服や靴には付けない）。</li>
+    <li>実施日時・実施者氏名・実施場所は必ず記入。区分の数字（0・I・II・III）にも○をつける。</li>
+    <li>区分を変更する場合は新しいタグを付け直す（古いタグは二重線で消して残すなど、所属施設・地域のマニュアルに従う）。</li>
+    <li>二次トリアージでは生理学的・解剖学的評価（PAT法）を行う。</li></ul><div class="tiny" style="margin-top:8px">装着部位や記載方法は地域・施設のマニュアルを優先してください。</div>`;
+  return `<div class="tabs" data-tabs="tt"><button class="on" data-tab="tt-p">練習</button><button data-tab="tt-a">START法アルゴリズム</button><button data-tab="tt-n">タグの記入と装着</button></div>
+  <div class="sub on" id="tt-p"><div class="tri-wrap"><div>
+    ${CARD('症例', `<div id="tr_case"></div><hr class="s"><div class="row"><button class="btn pri" id="tr_judge">判定する</button><button class="btn" id="tr_next">次の傷病者 →</button><button class="btn ghost" id="tr_undo">タグを戻す</button><span class="sp"></span><span class="tiny">経過 <b id="tr_time" class="num">0</b> 秒</span></div><label class="chk" style="margin-top:10px"><input type="checkbox" id="tr_fill"><span>タグの記入（実施日時・実施者・実施場所・区分の○）も採点する</span></label>`, { right: '<span class="scorebar"><span>正答 <b id="tr_ok">0</b>/<b id="tr_n">0</b></span><span>正答率 <b id="tr_rate">—</b></span><span>平均 <b id="tr_avg">—</b>秒</span></span>' })}
+    <div id="tr_fb"></div><div id="tr_hist"></div>
+  </div><div>${tag}<div class="tiny" style="margin-top:8px;width:300px">色の帯をクリックすると、<b>その帯を最下端に残して下側を切り取り</b>ます。</div></div></div></div>
+  <div class="sub" id="tt-a">${CARD('START法（一次トリアージ）', flow)}</div>
+  <div class="sub" id="tt-n">${CARD('トリアージタグの記入と装着のポイント', pts)}</div>`;
+}, function () { });
+
+function trRenderTag() {
+  $$('#ttag .strip').forEach(s => s.classList.toggle('torn', +s.dataset.strip > TR.keep));
+  $$('#tt_cats span').forEach(s => s.classList.toggle('on', s.dataset.cat === TR.cat));
+}
+function trNext() {
+  TR.c = genCase(); TR.keep = 3; TR.judged = false; TR.cat = null; TR.t0 = Date.now();
+  ['tt_no', 'tt_name', 'tt_age', 'tt_time', 'tt_sym'].forEach(id => setv(id, ''));
+  setv('tt_no', TR.stats.n + 1);
+  $('#tr_case').innerHTML = caseHTML(TR.c); $('#tr_fb').innerHTML = ''; trRenderTag();
+}
+function trJudge() {
+  if (!TR.c || TR.judged) return;
+  const t = (Date.now() - TR.t0) / 1000;
+  const chosen = COLORS[TR.keep], ans = TR.c.ans.color;
+  let ok = chosen === ans;
+  const fillErr = [];
+  if (chk('tr_fill')) {
+    if (!$('#tt_time').value.trim()) fillErr.push('実施日時');
+    if (!$('#tt_who').value.trim()) fillErr.push('実施者');
+    if (!$('#tt_where').value.trim()) fillErr.push('実施場所');
+    if (TR.cat !== L.triageColors[chosen].cat) fillErr.push('区分の○（' + L.triageColors[chosen].cat + 'に○）');
+  }
+  TR.judged = true; TR.stats.n++; if (ok) TR.stats.ok++; TR.stats.time += t;
+  TR.hist.unshift({ n: TR.stats.n, ans, chosen, ok, t });
+  const C = L.triageColors;
+  $('#tr_fb').innerHTML = CARD(ok ? '正解' : '不正解', `<div class="hero ${ok ? 'ok' : 'danger'}" style="margin-bottom:12px"><div class="lbl">あなたの判定 → 正答</div><div class="val" style="font-size:22px"><span class="colorchip ${chosen}">${C[chosen].j} ${C[chosen].cat}</span> → <span class="colorchip ${ans}">${C[ans].j} ${C[ans].cat}</span></div><div class="desc">${C[ans].name}　判定時間 ${t.toFixed(1)} 秒${t > 30 ? '（目標30秒以内）' : ''}</div></div>
+    <div class="flow">${TR.c.ans.path.map((s, i, a) => `<div class="fs ${i === a.length - 1 ? 'end' : ''}"><span class="q">${s.q}</span><span class="a">${s.a}</span>${i === a.length - 1 ? `<span class="colorchip ${ans}">${C[ans].j}</span>` : ''}</div>`).join('')}</div>
+    ${TIP[TR.c.sub] ? `<div class="alert info">${TIP[TR.c.sub]}</div>` : ''}
+    ${fillErr.length ? `<div class="alert warn">タグ記入の不備：${fillErr.join('、')}</div>` : chk('tr_fill') ? '<div class="alert ok">タグ記入は適切です。</div>' : ''}`);
+  $('#tr_ok').textContent = TR.stats.ok; $('#tr_n').textContent = TR.stats.n;
+  $('#tr_rate').textContent = Math.round(TR.stats.ok / TR.stats.n * 100) + '%';
+  $('#tr_avg').textContent = (TR.stats.time / TR.stats.n).toFixed(1);
+  $('#tr_hist').innerHTML = CARD('履歴', `<div class="tw"><table class="t"><thead><tr><th>No.</th><th>正答</th><th>判定</th><th>時間</th><th></th></tr></thead><tbody>${TR.hist.slice(0, 15).map(h => `<tr><td>${h.n}</td><td><span class="colorchip ${h.ans}">${C[h.ans].j}</span></td><td><span class="colorchip ${h.chosen}">${C[h.chosen].j}</span></td><td>${h.t.toFixed(1)}秒</td><td>${h.ok ? '<span class="pill ok">○</span>' : '<span class="pill danger">×</span>'}</td></tr>`).join('')}</tbody></table></div>`);
+}
+
+
+/* =========================================================
+   NEWS2
+   ========================================================= */
+Object.assign(HELP, {
+  news2: { t: 'NEWS2（National Early Warning Score 2）', b: '<p>英国王立内科医協会（RCP, 2017）の早期警告スコア。7項目（呼吸数・SpO₂・酸素投与・収縮期血圧・脈拍・意識・体温）を合計し、急変リスクを評価する。</p><p><b>0〜4</b>：低リスク／<b>いずれか1項目が3点</b>：低〜中リスク（速やかに病棟で評価）／<b>5〜6</b>：中リスク（緊急対応の閾値）／<b>7以上</b>：高リスク（救急対応・集中治療チームへ）。</p><p>※院内のRRT起動基準がある場合はそちらを優先する。</p>' },
+  scale2: { t: 'SpO₂スケール2', b: '<p>高二酸化炭素血症性呼吸不全（COPDなど）で、<b>医師が目標SpO₂ 88〜92%と指示した患者</b>にのみ使用する。それ以外はスケール1を用いる。</p><p>スケール2では酸素投与中にSpO₂ 93%以上で加点される（過剰な酸素投与の警告）。</p>' },
+  acvpu: { t: 'ACVPU（意識）', b: '<p>A：意識清明／C：新たな混乱（New Confusion）／V：声に反応／P：痛みに反応／U：反応なし。A以外はすべて3点。新たに出現した混乱・せん妄はそれだけで3点となる。</p>' }
+});
+
+page('news', 'NEWS2・早期警告', 'NEWS2による急変リスク評価（qSOFAを同時表示）', 'news', function () {
+  return `<div class="cols"><div>
+  ${CARD('バイタルサイン', `<div class="grid">${F('w_rr', '呼吸数', '回/分', { min: 0, max: 80 })}${F('w_spo2', 'SpO₂', '%', { min: 30, max: 100 })}${F('w_sbp', '収縮期血圧', 'mmHg', { min: 20, max: 300 })}${F('w_hr', '脈拍', '回/分', { min: 10, max: 250 })}${F('w_temp', '体温', '℃', { min: 25, max: 43 })}</div>
+   <hr class="s"><div class="ni"><div class="h">酸素投与</div>${SEG('w_o2', [['0', '室内気（Air）'], ['1', '酸素投与中']], '', '0')}</div>
+   <div class="ni"><div class="h">SpO₂スケール ${help('scale2')}</div>${SEG('w_scale', [['1', 'スケール1（通常）'], ['2', 'スケール2（目標SpO₂ 88〜92%の指示あり）']], '', '1')}</div>
+   <div class="ni"><div class="h">意識（ACVPU） ${help('acvpu')}</div>${SEG('w_acvpu', [['A', 'A 清明'], ['C', 'C 新たな混乱'], ['V', 'V 声に反応'], ['P', 'P 痛みに反応'], ['U', 'U 反応なし']], '', 'A')}</div>`, { right: help('news2') + ' <button class="btn sm" data-reset="news">クリア</button>' })}
+  ${CARD('NEWS2 スコア表', `<div class="tw"><table class="t" id="w_tbl"><thead><tr><th>項目</th><th>3</th><th>2</th><th>1</th><th>0</th><th>1</th><th>2</th><th>3</th></tr></thead><tbody>
+   <tr data-r="rr"><td>呼吸数</td><td>≦8</td><td></td><td>9〜11</td><td>12〜20</td><td></td><td>21〜24</td><td>≧25</td></tr>
+   <tr data-r="spo2s1"><td>SpO₂ スケール1</td><td>≦91</td><td>92〜93</td><td>94〜95</td><td>≧96</td><td></td><td></td><td></td></tr>
+   <tr data-r="spo2s2"><td>SpO₂ スケール2</td><td>≦83</td><td>84〜85</td><td>86〜87</td><td>88〜92<br>≧93 室内気</td><td>93〜94 酸素</td><td>95〜96 酸素</td><td>≧97 酸素</td></tr>
+   <tr data-r="o2"><td>酸素投与</td><td></td><td>酸素</td><td></td><td>室内気</td><td></td><td></td><td></td></tr>
+   <tr data-r="sbp"><td>収縮期血圧</td><td>≦90</td><td>91〜100</td><td>101〜110</td><td>111〜219</td><td></td><td></td><td>≧220</td></tr>
+   <tr data-r="hr"><td>脈拍</td><td>≦40</td><td></td><td>41〜50</td><td>51〜90</td><td>91〜110</td><td>111〜130</td><td>≧131</td></tr>
+   <tr data-r="acvpu"><td>意識</td><td></td><td></td><td></td><td>A</td><td></td><td></td><td>C・V・P・U</td></tr>
+   <tr data-r="temp"><td>体温</td><td>≦35.0</td><td></td><td>35.1〜36.0</td><td>36.1〜38.0</td><td>38.1〜39.0</td><td>≧39.1</td><td></td></tr>
+   </tbody></table></div><div class="tiny" style="margin-top:6px">Royal College of Physicians. National Early Warning Score (NEWS) 2. 2017</div>`, { tag: '参照' })}
+  </div><div class="sticky" id="w_out"></div></div>`;
+}, computeNEWS);
+
+function newsCol(k, v, p) { // スコア表のどの列に該当するか（0〜6）
+  if (!L.isN(v)) return -1;
+  const m = {
+    rr: x => x <= 8 ? 0 : x <= 11 ? 2 : x <= 20 ? 3 : x <= 24 ? 5 : 6,
+    spo2s1: x => x <= 91 ? 0 : x <= 93 ? 1 : x <= 95 ? 2 : 3,
+    spo2s2: x => x <= 83 ? 0 : x <= 85 ? 1 : x <= 87 ? 2 : x <= 92 || !p.o2 ? 3 : x <= 94 ? 4 : x <= 96 ? 5 : 6,
+    sbp: x => x <= 90 ? 0 : x <= 100 ? 1 : x <= 110 ? 2 : x <= 219 ? 3 : 6,
+    hr: x => x <= 40 ? 0 : x <= 50 ? 2 : x <= 90 ? 3 : x <= 110 ? 4 : x <= 130 ? 5 : 6,
+    temp: x => x <= 35 ? 0 : x <= 36 ? 2 : x <= 38 ? 3 : x <= 39 ? 4 : 5
+  };
+  return m[k](v);
+}
+
+function computeNEWS() {
+  validate($('#p-news'));
+  const p = { rr: val('w_rr'), spo2: val('w_spo2'), scale: +ST.w_scale, o2: ST.w_o2 === 1, sbp: val('w_sbp'), hr: val('w_hr'), acvpu: ST.w_acvpu, temp: val('w_temp') };
+  const o = L.news2(p);
+  // 表のハイライト
+  $$('#w_tbl td').forEach(c => c.classList.remove('hlx', 'hl'));
+  const mark = (r, col) => { if (col < 0) return; const tr = $(`#w_tbl tr[data-r="${r}"]`); if (tr) tr.children[col + 1].classList.add('hlx'); };
+  mark('rr', newsCol('rr', p.rr, p)); mark('sbp', newsCol('sbp', p.sbp, p)); mark('hr', newsCol('hr', p.hr, p)); mark('temp', newsCol('temp', p.temp, p));
+  mark(p.scale === 2 ? 'spo2s2' : 'spo2s1', newsCol(p.scale === 2 ? 'spo2s2' : 'spo2s1', p.spo2, p));
+  $(`#w_tbl tr[data-r="${p.scale === 2 ? 'spo2s1' : 'spo2s2'}"]`).style.opacity = .35;
+  $(`#w_tbl tr[data-r="${p.scale === 2 ? 'spo2s2' : 'spo2s1'}"]`).style.opacity = 1;
+  mark('o2', p.o2 ? 1 : 3); mark('acvpu', p.acvpu === 'A' ? 3 : 6);
+  const R = {
+    low: { lv: 'ok', t: '低リスク', d: '観察頻度：最低12時間ごと（0点）、4〜6時間ごと（1〜4点）。担当看護師が評価を継続。' },
+    lowmed: { lv: 'warn', t: '低〜中リスク（単一項目3点）', d: '観察頻度：最低1時間ごと。担当看護師が速やかに医師へ報告し、評価を依頼。' },
+    medium: { lv: 'warn', t: '中リスク', d: '観察頻度：最低1時間ごと。緊急の医師評価（急変対応の閾値）。RRT要請を検討。' },
+    high: { lv: 'danger', t: '高リスク', d: '持続モニタリング。救急対応（RRT・集中治療チーム）を直ちに要請。' }
+  }[o.risk];
+  const entered = 7 - o.missing.length;
+  const lbl = { rr: '呼吸数', spo2: 'SpO₂', o2: '酸素投与', sbp: '収縮期血圧', hr: '脈拍', acvpu: '意識', temp: '体温' };
+  const q = L.qsofa(p.rr, p.sbp, p.acvpu && p.acvpu !== 'A');
+  const parts = Object.keys(lbl).map(k => { const v = o.parts[k]; const c = v == null ? 'var(--ink3)' : v === 3 ? 'var(--danger)' : v === 2 ? 'var(--warn)' : v === 1 ? 'var(--info)' : 'var(--ok)'; return `<div style="display:flex;justify-content:space-between;padding:5px 2px;border-bottom:1px solid var(--line);font-size:13.5px"><span>${lbl[k]}</span><b class="num" style="color:${c}">${v == null ? '—' : v}</b></div>`; }).join('');
+  const noVit = ['rr', 'spo2', 'sbp', 'hr', 'temp'].every(k => o.missing.includes(k));
+  $('#w_out').innerHTML = noVit ? CARD('NEWS2 結果', '<div class="hero"><div class="val" style="font-size:20px;color:var(--ink3)">バイタルサインを入力</div><div class="desc">入力と同時に点数・リスク・観察頻度を表示します。</div></div>', { right: help('news2') }) : CARD('NEWS2 結果', `<div class="hero ${R.lv}"><div class="lbl">NEWS2 合計　<span class="tiny">入力 ${entered}/7 項目</span></div><div class="val">${o.total}<span style="font-size:16px"> 点</span></div><div class="desc"><b>${R.t}</b><br>${R.d}</div></div>
+    ${o.missing.length && o.missing.length < 7 ? `<div class="alert warn">未入力：${o.missing.map(k => lbl[k]).join('・')}（合計は過小評価になります）</div>` : ''}
+    ${o.red3 ? '<div class="alert danger">単一項目で3点があります。合計点が低くても速やかに評価を。</div>' : ''}
+    ${p.scale === 2 && p.o2 && L.isN(p.spo2) && p.spo2 >= 93 ? '<div class="alert warn">スケール2で酸素投与中にSpO₂ 93%以上：過剰な酸素投与の可能性（CO₂ナルコーシスに注意）。</div>' : ''}
+    ${parts}<div class="tiny" style="margin-top:8px">院内のRRT起動基準がある場合はそちらを優先してください。</div>`, { right: help('news2') });
+  $('#w_out').innerHTML +=
+    CARD('qSOFA（同じ入力から）', `<div class="kpis">${KPI('qSOFA', q.score, '/3', q.score >= 2 ? 'danger' : q.score ? 'warn' : 'ok', q.items.join('・') || '該当なし', 'qsofa')}</div>${q.score >= 2 ? '<div class="alert warn">qSOFA 2点以上：感染症があれば敗血症を疑い、SOFAで臓器障害を評価してください。</div>' : ''}<button class="btn sm" data-go="sepsis" style="margin-top:8px">SOFA・敗血症評価へ →</button><div class="tiny" style="margin-top:6px">意識はC・V・P・Uを「意識変容」として扱います。</div>`);
+}
+
+/* =========================================================
+   ホーム
+   ========================================================= */
+page('home', 'ホーム', '救急・ICU 臨床支援ツール', 'home', function () {
+  const list = PAGES.filter(p => p.id !== 'home');
+  return `<div class="hero info" style="margin-bottom:18px"><div class="lbl">救急・ICU 臨床支援ツール　Version 2.0</div><div class="val" style="font-size:24px">ベッドサイドの評価を、速く・正確に。</div><div class="desc">完全オフラインで動作する単一HTMLファイルです。入力した患者データは保存・送信されません（画面を閉じると消去されます）。</div></div>
+  <div class="homegrid">${list.map(p => `<button class="hcard" data-go="${p.id}"><div class="ic">${svgI(p.icon)}</div><h3>${p.title}</h3><p>${p.sub}</p></button>`).join('')}<a class="hcard" href="simulator.html" style="text-decoration:none;color:inherit"><div class="ic">${svgI('sim')}</div><h3>急変対応シミュレーター Pro ↗</h3><p>急変シナリオの実践トレーニング（同じフォルダの simulator.html を開きます）</p></a></div>
+  <div class="cols" style="margin-top:20px"><div>${CARD('ご使用にあたって', `<ul class="ref" style="padding-left:18px;margin:0;font-size:13px"><li>本ツールは評価・判断の<b>補助</b>です。診断・治療方針は医師の判断と施設の基準・マニュアルを優先してください。</li><li>酸素デバイスのFiO₂は当院の酸素療法デバイス確認表・ブレンダー流量計早見表に準拠しています。</li><li>数値の異常値は入力欄が赤くなります（入力ミスの防止）。</li><li>推奨環境：Microsoft Edge／Google Chrome／Safari の最新版（iPhone・iPad対応）。</li></ul>`)}</div>
+  <div>${CARD('Version 2.0 の主な変更点', `<ul class="ref" style="padding-left:18px;margin:0;font-size:13px"><li><b>NIHSS</b>：責任病変判定を全面的に作り直し。左右を「患者の左／右」で明示し、左麻痺では右半球と正しく判定。顔面・視野・共同偏視・失調・感覚・無視の側性、交叉性麻痺（脳幹）、小脳、血管領域（MCA/ACA/PCA/ラクナ）、LVO疑い、所見の矛盾チェックを追加</li><li><b>血液ガス</b>：Δ比、補正AG、H-H式による入力整合性チェック、酸素解離曲線</li><li><b>循環</b>：CI・SVR・CPO・DO₂、ショックの型、Forrester、CS、Nohria-Stevenson</li><li><b>栄養</b>：目標を何割に設定するか（スライダー・プリセット）、漸増スケジュール、達成率、Refeedingリスク、IN/OUT</li><li><b>NEWS2</b>：早期警告スコア（スコア表ハイライト・観察頻度・qSOFA同時表示）を新設</li><li><b>SOFA</b>：敗血症／敗血症性ショック判定、γ計算</li><li><b>トリアージ</b>：ランダム症例とタグ切り取り練習</li><li>デザインを一新（ダークモード・スマートフォン対応・印刷対応）</li></ul>`)}</div></div>
+  ${CARD('主な参考文献', `<ol class="ref" style="padding-left:18px;margin:0"><li>日本版敗血症診療ガイドライン2024（J-SSCG 2024）／Singer M, et al. Sepsis-3. JAMA 2016</li><li>Royal College of Physicians. National Early Warning Score (NEWS) 2. 2017</li><li>Vincent JL, et al. The SOFA score. Intensive Care Med 1996／Ranzani OT, et al. SOFA-2. JAMA 2025</li><li>日本循環器学会/日本心不全学会. 急性・慢性心不全診療ガイドライン（2017年改訂版）、2021年フォーカスアップデート版</li><li>日本脳卒中学会. 脳卒中治療ガイドライン2021［改訂2023］／静注血栓溶解（rt-PA）療法 適正治療指針 第三版</li><li>Brott T, et al. NIH Stroke Scale. Stroke 1989</li><li>Singer P, et al. ESPEN guideline on clinical nutrition in the ICU. Clin Nutr 2019／日本集中治療医学会. 日本版重症患者の栄養療法ガイドライン 2016</li><li>NICE CG32. Nutrition support for adults（Refeeding）</li><li>ARDS Definition Task Force. Berlin Definition. JAMA 2012</li><li>日本DMAT／MCLS 標準テキスト（START法）</li></ol>`)}`;
+}, function () { });
+
+/* =========================================================
+   初期化・イベント
+   ========================================================= */
+function buildAll() {
+  const order = ['home', 'news', 'abg', 'hemo', 'nihss', 'nutri', 'sepsis', 'triage'];
+  PAGES.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  $('#nav-list').innerHTML = PAGES.map(p => `<li><button data-go="${p.id}">${svgI(p.icon)}<span>${p.title}</span></button></li>`).join('') +
+    `<li style="margin-top:10px;border-top:1px solid rgba(255,255,255,.08);padding-top:10px"><button onclick="location.href='simulator.html'">${svgI('sim')}<span>急変対応シミュレーター ↗</span></button></li>`;
+  $('#pages').innerHTML = PAGES.map(p => `<section class="page" id="p-${p.id}"></section>`).join('');
+  PAGES.forEach(p => { $('#p-' + p.id).innerHTML = p.build(); });
+  abgDevOpts();
+  PAGES.forEach(p => p.compute());
+  trNext();
+}
+function rebuild(id) {
+  const P = PAGES.find(p => p.id === id); const sec = $('#p-' + id);
+  $$('[data-segname]', sec).forEach(s => delete ST[s.dataset.segname]);
+  $$('[data-seg]', sec).forEach(b => delete ST[b.dataset.seg]);
+  sec.innerHTML = P.build();
+  if (id === 'abg') abgDevOpts();
+  P.compute();
+}
+function curPage() { const s = $('.page.on'); return s ? s.id.slice(2) : 'home'; }
+function computeFor(el) { const sec = el.closest('.page'); if (!sec) return; const P = PAGES.find(p => 'p-' + p.id === sec.id); if (P) P.compute(); }
+
+document.addEventListener('click', e => {
+  const t = e.target;
+  const g = t.closest('[data-go]'); if (g) { go(g.dataset.go); return; }
+  const h = t.closest('[data-help]'); if (h) { showHelp(h.dataset.help); return; }
+  if (t.closest('#mdl-x') || t.id === 'mdl') { $('#mdl').classList.remove('on'); return; }
+  const sb = t.closest('[data-seg]');
+  if (sb) {
+    const n = sb.dataset.seg, raw = sb.dataset.v;
+    ST[n] = raw !== '' && !isNaN(+raw) ? +raw : raw;
+    $$(`[data-seg="${n}"]`).forEach(b => b.classList.toggle('on', b === sb));
+    if (n === 'g_dev') abgDevOpts();
+    computeFor(sb); return;
+  }
+  const pm = t.closest('[data-pm]');
+  if (pm) { const el = document.getElementById(pm.dataset.pm); let v = el.value.trim(); v = v.startsWith('-') ? v.slice(1) : '-' + v; el.value = v; el.focus(); computeFor(el); return; }
+  const rs = t.closest('[data-reset]'); if (rs) { rebuild(rs.dataset.reset); return; }
+  const tb = t.closest('[data-tab]');
+  if (tb) { const grp = tb.parentElement; $$('[data-tab]', grp).forEach(b => b.classList.toggle('on', b === tb)); $$('[data-tab]', grp).forEach(b => { const s = document.getElementById(b.dataset.tab); if (s) s.classList.toggle('on', b === tb); }); return; }
+  if (t.id === 'n_coma') { ST.n1a = 3; Object.assign(ST, L.nihssComaDefaults); syncSeg('#p-nihss'); computeNIHSS(); return; }
+  if (t.id === 'n_zero') { L.nihssItems.forEach(k => ST[k] = 0); syncSeg('#p-nihss'); computeNIHSS(); return; }
+  const pc = t.closest('[data-pct]'); if (pc) { $('#u_pct').value = pc.dataset.pct; computeNutri(); return; }
+  if (t.id === 'u_rf10' || t.id === 'u_rf5') {
+    const o = L.nutri({ sex: $('#u_sex').value, age: val('u_age'), ht: val('u_ht'), wt: val('u_wt'), basis: $('#u_basis').value, method: ST.u_meth, kcalPerKg: +$('#u_kpk').value, af: +$('#u_af').value, sf: +$('#u_sf').value, targetPct: 100, proteinPerKg: 1 });
+    if (!L.isN(o.fullKcal)) { alertBox('身長・体重（H-B式では年齢も）を先に入力してください。'); return; }
+    const k = t.id === 'u_rf10' ? 10 : 5;
+    $('#u_pct').value = Math.max(5, Math.round(k * o.dw / o.fullKcal * 100)); computeNutri(); return;
+  }
+  if (t.id === 'd_apply') {
+    const g = L.dose(val('d_mg'), val('d_ml'), val('d_rate'), val('d_wt'));
+    setv('s_' + $('#d_drug').value, +g.toFixed(3)); computeSepsis(); return;
+  }
+  const st = t.closest('[data-strip]'); if (st && !TR.judged) { TR.keep = +st.dataset.strip; trRenderTag(); return; }
+  const ct = t.closest('[data-cat]'); if (ct && !TR.judged) { TR.cat = TR.cat === ct.dataset.cat ? null : ct.dataset.cat; trRenderTag(); return; }
+  if (t.id === 'tr_judge') { trJudge(); return; }
+  if (t.id === 'tr_next') { trNext(); return; }
+  if (t.id === 'tr_undo') { if (!TR.judged) { TR.keep = 3; trRenderTag(); } return; }
+  if (t.id === 'tt_now') { const d = new Date(); setv('tt_time', `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`); return; }
+  if (t.closest('#menu-btn')) { $('.nav').classList.toggle('open'); return; }
+  if (t.closest('#theme-btn')) { toggleTheme(); return; }
+});
+function alertBox(msg) { $('#mdl-t').textContent = 'お知らせ'; $('#mdl-b').innerHTML = `<p>${esc(msg)}</p>`; $('#mdl').classList.add('on'); }
+function syncSeg(scope) { $$('[data-seg]', $(scope)).forEach(b => b.classList.toggle('on', ST[b.dataset.seg] !== undefined && String(ST[b.dataset.seg]) === b.dataset.v)); }
+document.addEventListener('input', e => { if (e.target.matches('input,select')) computeFor(e.target); });
+document.addEventListener('change', e => { if (e.target.type === 'checkbox') e.target.dataset.touched = '1'; if (e.target.matches('input,select')) computeFor(e.target); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#mdl').classList.remove('on'); });
+setInterval(() => { if (TR.c && !TR.judged && $('#tr_time')) $('#tr_time').textContent = Math.floor((Date.now() - TR.t0) / 1000); }, 500);
+
+function toggleTheme() {
+  const d = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = d; try { localStorage.setItem('icu-theme', d); } catch (e) { }
+}
+(function init() {
+  try { const t = localStorage.getItem('icu-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { }
+  buildAll();
+  const h = (location.hash || '').slice(1);
+  go(PAGES.some(p => p.id === h) ? h : 'home');
+})();
+</script>
+</body>
+</html>
